@@ -1545,6 +1545,7 @@ including current 6% exceptions and transitional rules.
 | Staff Calendar | `src/modules/hr/appointment.ts`, `calendarSync.ts`, `teamCalendar.ts`, `web/public/assets/screens-hr.js` | `src/modules/hr/appointment.test.ts`, `teamCalendar.test.ts`, `src/api/hrCalendar.integration.test.ts`, `tests/e2e/staff-calendar.spec.mjs` |
 | Expense Claim | `src/modules/expenses/claims.ts`, `controls.ts`, `postings.ts` | `src/modules/expenses/claims.test.ts`, `controls.test.ts`, `postings.test.ts` |
 | Company Receipt foundation | `src/data/schema/expenses.ts`, `src/modules/expenses/companyReceipt.ts`, `src/api/routes/companyReceipts.ts` | `src/modules/expenses/companyReceipt.test.ts`, `src/api/companyReceipts.integration.test.ts`, `src/api/postgresSecurity.integration.test.ts` |
+| Company profile | `src/data/schema/companyProfile.ts`, `src/modules/admin/companyProfile.ts`, `src/api/routes/settings.ts` | `src/modules/admin/companyProfile.test.ts`, `src/api/controlPlane.integration.test.ts`, `tests/e2e/company-profile.spec.mjs` |
 | Company Receipt Pack | `src/modules/expenses/companyReceiptPack.ts`, `companyReceiptPackGovernance.ts`, `companyReceiptPackPdf.ts`, `src/modules/documents/evidencePdf.ts` | `src/modules/expenses/companyReceiptPack.test.ts`, `src/api/companyReceipts.integration.test.ts`, `src/modules/expenses/taxEvidence.test.ts`, `tests/e2e/company-receipts.spec.mjs` |
 | Claim downstream | `src/modules/expenses/reimbursementBatches.ts`, `reimbursementPayments.ts` | matching module tests |
 | Project Progress Claim | `src/modules/project/progressClaim.ts` | project module/API tests where registered |
@@ -1764,3 +1765,21 @@ has no owner flag or permissions. Invalid membership clears the local session.
 This is Demo workspace restoration, not production authentication. The setup
 browser regression covers new-Company login, reload, stale preference, denied
 cross-Company switching and revocation. Shared business commands retain authority.
+
+## Company profile MVP — 2026-09-29
+
+System Settings reads the active Company's canonical name, country, currency and
+tax regime together with optional registration number, tax number, address and
+logo from `company_profile`. The profile row is keyed by the session-derived
+`masterFn + companyFn`; no client tenant key participates in a read or write.
+`settings.read` permits viewing and `settings.manage` permits editing.
+
+The update command in `src/modules/admin/companyProfile.ts` validates bounded
+text and a maximum 256 KiB PNG/JPEG/WebP data URL by MIME, base64 and file
+signature. It changes the canonical `company.name` and profile row in one
+transaction, checks `profileVersion`, and appends an audit event without logo
+bytes. Country, currency, tax regime and Company identifier remain outside
+this editor. The production API uses the shared action dispatcher with a
+required idempotency key; Demo calls the same domain command. The UI is in
+`web/public/assets/company-profile-ui.js`, with desktop/375px browser and
+PGlite read-back evidence in `docs/evidence/TASK-252-company-profile.md`.

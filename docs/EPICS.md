@@ -2671,6 +2671,7 @@ Current truth:
 | TASK-221 | Done | Make procurement next actions and receiving scope clear; built-Demo desktop/mobile full-receipt workflow passes |
 | TASK-222 | Done | Improve mobile touch zoom and localized status usability; five-language desktop/mobile E2E and half-width reflow pass |
 | TASK-223 | Done | Resolve payment voucher recovery audit timing uncertainty; Promise-aware 10-second recovery budget and full 129-route audit pass |
+| TASK-252 | Done | Governed Company profile view/edit for HR/Admin MVP verified locally in Demo/API tests and desktop/375px browser |
 
 Exit criteria: TASK-195–202 and TASK-204–205 pass their source, PostgreSQL, browser and operational
 acceptance criteria; all required current-HEAD CI gates pass; public

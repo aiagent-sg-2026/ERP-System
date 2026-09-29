@@ -1,4 +1,16 @@
-# Project Status — reviewed 2026-09-25
+# Project Status — reviewed 2026-09-29
+
+TASK-252 Company profile local candidate — 2026-09-29: System Settings now
+reads and edits the active Company's name, registration number, tax number,
+address and optional validated logo through a versioned, audited shared
+command. Demo/PGlite and API routes use the same domain contract; Company
+scope comes from the session. Focused domain/API tests (5), browser save and
+reload on both dev and built-preview desktop/375 px, PGlite row readback, logo and required-name errors,
+lint, root/web typechecks, Demo proof, build, generated-schema/RLS and diff
+checks passed. The browser had zero console errors and no 375 px horizontal
+overflow. This is a local candidate, not a production deployment or
+PostgreSQL migration/UAT result. See [evidence](evidence/TASK-252-company-profile.md)
+and the [focused MVP tracker](PROGRESS.md).
 
 Product Feedback source candidate — 2026-09-25: the current branch adds
 Company-scoped append-only case evidence, Agent evidence append and scoped

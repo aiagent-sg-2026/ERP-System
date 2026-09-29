@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'erp-system-pwa-v291';
+const CACHE_VERSION = 'erp-system-pwa-v293';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -12,6 +12,7 @@ const staticUrls = [
   './icons/aria-erp-logo.png?v=20260809-aria-brand-v1',
   './assets/erp.css',
   './assets/erp-blocks.css',
+  './assets/company-profile-ui.css',
   './assets/i18n.css',
   './assets/sales-ext.css',
   './assets/inventory-ext.css',
@@ -99,6 +100,7 @@ const staticUrls = [
   './assets/screens-inv-new.js',
   './assets/screens-activity.js',
   './assets/screens-control-plane-canonical.js',
+  './assets/company-profile-ui.js',
   './assets/app.js',
   './assets/pwa.js',
   './db/erp-system-schema.sql',
