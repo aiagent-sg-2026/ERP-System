@@ -1,7 +1,10 @@
 # TASK-258: atomic Demo upgrades and safe visible diagnostics
 
-2026-10-02 candidate on base `2b5c8d58df7effdba33dd29de4790b866e6f610e`.
-The owner's actual startup cause remains **unconfirmed**. No owner browser
+2026-10-02 follow-up on main `d29c29ba4d3dcd87718f5eb3e86bc59e5defe55d`.
+The owner supplied the safe Copy diagnostic from that build: `demo_schema_lineage_unknown`
+at `Checking database compatibility` / `VALIDATE DEMO SCHEMA LINEAGE`. The deployed
+gate rejects the owner's retained metadata; the exact structural difference and
+underlying owner cause remain **unconfirmed**. No owner browser
 storage, Air computer or production database was accessed or reset.
 
 ## Source-supported boundary
@@ -14,6 +17,30 @@ A full current-source memory-PGlite startup nevertheless reached17modules withou
 the HR objects. That defect alone does not reproduce the owner startup error.
 The historical CompanyProfile branch was not remotely available; its identity or
 repair is not inferred from the synthetic fixture.
+
+## Evidence-backed early-v73 normalization follow-up
+
+The actual ordered runner passes all119 canonical prefixes (0–118) in isolated
+memory-PGlite proof and reaches the exact latest hash. Current fixture SQL assets
+contain no DDL. A separate evidenced preview shape retains the exact obsolete
+`uq_role_master_name` index on `role`; the new gate rejects it before the adapter's
+existing late normalization. Canonical migration0073 drops that index. Latest118
+and canonical117 mis-marked118 reproduce this ordering omission.
+
+The follow-up recognizes only the exact source-derived valid/ready/immediate,
+non-constraint role-index definition, no recorded identity, and a full normalized
+canonical hash matching the numeric prefix (or the bounded117/118 collision).
+Only then can its removal share the existing atomic upgrade transaction. Wrong
+columns, nonunique/partial/constraint-backed variants, recorded identities and
+additional owned drift fail closed. Interruption restores the index and all
+schema/identity changes; retry is covered. Removing the former global-name late
+drop also preserves an unrelated extension's same-name index.
+
+Unknown-lineage Copy details add only numeric marker/identity count, canonical
+match versions, a bounded eligibility enum and seven schema-category hashes/counts.
+No raw object names, definitions, private literals or business records are exported.
+This is evidence to distinguish retained shapes, not proof that the owner's shape
+is the early-v73 preview. A successful isolated fixture is not owner acceptance.
 
 ## Candidate contract
 
@@ -70,18 +97,27 @@ desktop/375px layout, reload-to-retry, and immediate/watchdog-late signed-in
 failure. It records page and console errors. Synthetic setup is not owner storage
 or physical-device certification.
 
-## Verified blockers and stopping boundary
+## Publication and remaining acceptance
 
 - Local cloud Chromium IPC is denied (`EPERM`), including the approved escalation
   route. Downloaded WebKit lacks host libraries. No cloud security/network setting
-  was changed. Browser regressions are written and syntax-checked, **not executed**
-  here, and therefore remain gates.
-- The authorized ERP remote branch creation returned GitHub403
-  `Resource not accessible by integration`. No alternate identity/credential route
-  was used. No remote branch, draft PR or exact-head CI is asserted to exist.
-- The deliverable is an exact-base/head patch and Git bundle with test/review
-  records, pending an authorized writable connection/environment. It must not be
-  represented as ready to merge or deployed until browser and exact-head CI gates pass.
+  was changed. Hosted CI executed the original six native Demo suites successfully
+  in Chromium/WebKit; the new early-v73/metadata-detail extensions remain exact-head
+  browser/CI gates until their published run completes.
+- Original [PR15](https://github.com/yapweijun1996/ERP-System/pull/15) was merged by
+  the owner. Main CI232 passed all jobs; public Pages revision/hash verification
+  established `d29c29b`. Earlier PR CI231's Staff phone-display failure did not
+  repeat on main, but its cause was not established.
+- The owner explicitly authorized `aiagent-sg-2026` ordinary public fork/draft PR
+  publication after the separate upstream connector403. [PR16](https://github.com/yapweijun1996/ERP-System/pull/16)
+  is a separately reviewed CI/test-only evidence change, with all unit shards and
+  both Demo jobs passed while broader audits continue at this checkpoint.
+- Pages publication is currently independent of CI and happened before complete
+  acceptance. No deployment trigger, privilege or repository rule was changed.
+  A CI-success publication gate needs a separate reviewed change.
+- This follow-up needs independent final-source review, new exact-head browser/CI
+  results and owner retained-profile verification. No manual merge or deployment
+  was performed by the assistant; no owner-error-fix claim is made.
 
 Production PostgreSQL journals, grants, credentials, routes and UAT remain separate
 and untouched. There is no owner-error-fix or production-readiness claim.
