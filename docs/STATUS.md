@@ -1,5 +1,16 @@
 # Project Status — reviewed 2026-09-25
 
+## 2026-10-02 atomic Demo upgrade and visible diagnostics — blocked candidate
+
+TASK-258 adds source-derived migration identity, bounded canonical117 mis-marked118
+repair, atomic ordered upgrades/fresh seeding, mixed-asset rejection and localized
+read-only failure diagnostics. Unknown canonical/governance drift remains unchanged
+and fails closed; Company/staff/revoked authority are preserved. The owner's
+startup cause and historical CompanyProfile lineage remain unconfirmed. Native
+cloud browser IPC and ERP GitHub write403 block browser proof, draft PR and CI;
+no deployment or production/UAT change occurred. See [candidate contract and
+verification boundary](evidence/TASK-258-demo-lineage-diagnostics.md).
+
 ## 2026-10-01 reported retained Demo startup failure — candidate only
 
 PR13 source/Demo revision `2ad84e1` passed main CI `36807104068` and Pages.
