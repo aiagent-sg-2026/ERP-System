@@ -1,5 +1,5 @@
 {
-  "id": "a579b7fa-109d-4eda-9752-6f3d7fb8931b",
+  "id": "faf335c0-16d7-4814-9e88-7e74758de280",
   "prevId": "803cf5da-e229-4da2-b75f-8ea643406dd3",
   "version": "7",
   "dialect": "postgresql",
@@ -982,136 +982,6 @@
         "ck_user_company_role_assignment_source": {
           "name": "ck_user_company_role_assignment_source",
           "value": "\"user_company_role\".\"assignment_source\" in ('manual', 'system', 'invitation', 'onboarding', 'legacy_backfill')"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.company_profile": {
-      "name": "company_profile",
-      "schema": "",
-      "columns": {
-        "master_fn": {
-          "name": "master_fn",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "company_fn": {
-          "name": "company_fn",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "registration_no": {
-          "name": "registration_no",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
-        "tax_no": {
-          "name": "tax_no",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
-        "address_line_1": {
-          "name": "address_line_1",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
-        "address_line_2": {
-          "name": "address_line_2",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
-        "city": {
-          "name": "city",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
-        "region": {
-          "name": "region",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
-        "postal_code": {
-          "name": "postal_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
-        "logo_data_url": {
-          "name": "logo_data_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "version": {
-          "name": "version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 1
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "fk_company_profile_company": {
-          "name": "fk_company_profile_company",
-          "tableFrom": "company_profile",
-          "tableTo": "company",
-          "columnsFrom": [
-            "master_fn",
-            "company_fn"
-          ],
-          "columnsTo": [
-            "master_fn",
-            "company_fn"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "company_profile_master_fn_company_fn_pk": {
-          "name": "company_profile_master_fn_company_fn_pk",
-          "columns": [
-            "master_fn",
-            "company_fn"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "ck_company_profile_version": {
-          "name": "ck_company_profile_version",
-          "value": "\"company_profile\".\"version\" > 0"
         }
       },
       "isRLSEnabled": false
@@ -24685,6 +24555,164 @@
       },
       "isRLSEnabled": false
     },
+    "public.hr_business_unit": {
+      "name": "hr_business_unit",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "hr_business_unit_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "master_fn": {
+          "name": "master_fn",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_fn": {
+          "name": "company_fn",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_hr_business_unit_code": {
+          "name": "uq_hr_business_unit_code",
+          "columns": [
+            {
+              "expression": "master_fn",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "company_fn",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uq_hr_business_unit_tenant_id": {
+          "name": "uq_hr_business_unit_tenant_id",
+          "columns": [
+            {
+              "expression": "master_fn",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "company_fn",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fk_hr_business_unit_company": {
+          "name": "fk_hr_business_unit_company",
+          "tableFrom": "hr_business_unit",
+          "tableTo": "company",
+          "columnsFrom": [
+            "master_fn",
+            "company_fn"
+          ],
+          "columnsTo": [
+            "master_fn",
+            "company_fn"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_hr_business_unit_version": {
+          "name": "ck_hr_business_unit_version",
+          "value": "\"hr_business_unit\".\"version\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "public.calendar_holiday": {
       "name": "calendar_holiday",
       "schema": "",
@@ -25017,6 +25045,25 @@
           "primaryKey": false,
           "notNull": true
         },
+        "organization_version": {
+          "name": "organization_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "business_unit_id": {
+          "name": "business_unit_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "position_id": {
+          "name": "position_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
         "employee_no": {
           "name": "employee_no",
           "type": "text",
@@ -25225,6 +25272,40 @@
             "manager_id"
           ],
           "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_employee_business_unit_tenant": {
+          "name": "fk_employee_business_unit_tenant",
+          "tableFrom": "employee",
+          "tableTo": "hr_business_unit",
+          "columnsFrom": [
+            "master_fn",
+            "company_fn",
+            "business_unit_id"
+          ],
+          "columnsTo": [
+            "master_fn",
+            "company_fn",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_employee_position_tenant": {
+          "name": "fk_employee_position_tenant",
+          "tableFrom": "employee",
+          "tableTo": "hr_position",
+          "columnsFrom": [
+            "master_fn",
+            "company_fn",
+            "position_id"
+          ],
+          "columnsTo": [
+            "master_fn",
+            "company_fn",
             "id"
           ],
           "onDelete": "no action",
@@ -25884,6 +25965,164 @@
         "ck_employee_hierarchy_scope_distinct": {
           "name": "ck_employee_hierarchy_scope_distinct",
           "value": "\"employee_hierarchy_scope\".\"grantee_employee_id\" <> \"employee_hierarchy_scope\".\"scope_root_employee_id\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.hr_position": {
+      "name": "hr_position",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "hr_position_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "master_fn": {
+          "name": "master_fn",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_fn": {
+          "name": "company_fn",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_hr_position_code": {
+          "name": "uq_hr_position_code",
+          "columns": [
+            {
+              "expression": "master_fn",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "company_fn",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uq_hr_position_tenant_id": {
+          "name": "uq_hr_position_tenant_id",
+          "columns": [
+            {
+              "expression": "master_fn",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "company_fn",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fk_hr_position_company": {
+          "name": "fk_hr_position_company",
+          "tableFrom": "hr_position",
+          "tableTo": "company",
+          "columnsFrom": [
+            "master_fn",
+            "company_fn"
+          ],
+          "columnsTo": [
+            "master_fn",
+            "company_fn"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_hr_position_version": {
+          "name": "ck_hr_position_version",
+          "value": "\"hr_position\".\"version\" > 0"
         }
       },
       "isRLSEnabled": false
@@ -55324,7 +55563,7 @@
       "checkConstraints": {
         "ck_role_resource_scope_value": {
           "name": "ck_role_resource_scope_value",
-          "value": "\"role_resource_scope\".\"scope\" in ('self', 'team', 'department', 'company')"
+          "value": "\"role_resource_scope\".\"scope\" in ('self', 'team', 'department', 'business_unit', 'position', 'company')"
         }
       },
       "isRLSEnabled": false
@@ -55701,7 +55940,7 @@
       "checkConstraints": {
         "ck_user_company_role_scope_value": {
           "name": "ck_user_company_role_scope_value",
-          "value": "\"user_company_role_scope\".\"scope\" in ('self', 'team', 'department', 'company')"
+          "value": "\"user_company_role_scope\".\"scope\" in ('self', 'team', 'department', 'business_unit', 'position', 'company')"
         },
         "ck_user_company_role_scope_target": {
           "name": "ck_user_company_role_scope_target",
@@ -56025,11 +56264,11 @@
         },
         "ck_user_permission_override_scope": {
           "name": "ck_user_permission_override_scope",
-          "value": "\"user_permission_override\".\"scope\" in ('self', 'team', 'department', 'company')"
+          "value": "\"user_permission_override\".\"scope\" in ('self', 'team', 'department', 'business_unit', 'position', 'company')"
         },
         "ck_user_permission_override_target_type": {
           "name": "ck_user_permission_override_target_type",
-          "value": "\"user_permission_override\".\"target_type\" in ('none', 'company', 'branch', 'department', 'team', 'employee', 'region', 'business_unit', 'legal_entity', 'cost_center')"
+          "value": "\"user_permission_override\".\"target_type\" in ('none', 'company', 'branch', 'department', 'team', 'employee', 'region', 'business_unit', 'position', 'legal_entity', 'cost_center')"
         },
         "ck_user_permission_override_target": {
           "name": "ck_user_permission_override_target",

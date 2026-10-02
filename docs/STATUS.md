@@ -12,6 +12,30 @@ overflow. This is a local candidate, not a production deployment or
 PostgreSQL migration/UAT result. See [evidence](evidence/TASK-252-company-profile.md)
 and the [focused MVP tracker](PROGRESS.md).
 
+## 2026-10-02 atomic Demo upgrade and visible diagnostics — blocked candidate
+
+TASK-258 adds source-derived migration identity, bounded canonical117 mis-marked118
+repair, atomic ordered upgrades/fresh seeding, mixed-asset rejection and localized
+read-only failure diagnostics. Unknown canonical/governance drift remains unchanged
+and fails closed; Company/staff/revoked authority are preserved. The owner's
+startup cause and historical CompanyProfile lineage remain unconfirmed. Native
+cloud browser IPC and ERP GitHub write403 block browser proof, draft PR and CI;
+no deployment or production/UAT change occurred. See [candidate contract and
+verification boundary](evidence/TASK-258-demo-lineage-diagnostics.md).
+
+## 2026-10-01 reported retained Demo startup failure — candidate only
+
+PR13 source/Demo revision `2ad84e1` passed main CI `36807104068` and Pages.
+A new owner screenshot shows a SQL `ON CONFLICT` constraint failure and unavailable
+Modules. TASK-257 now adds bounded Demo-only startup unique-index validation and
+additive missing-index repair; mismatches/duplicates/primary-constraint loss remain
+fail closed. Fresh public boot passes; controlled retained drift reproduces the
+error. Exact owner missing constraint is unknown. Review/CI/public release gates
+remain pending; this is not a production-readiness claim.
+See [bounded evidence](evidence/TASK-257-retained-demo-schema.md). BU/Position
+showroom fixture work is paused and preserved in a separate owned worktree.
+
+
 Product Feedback source candidate — 2026-09-25: the current branch adds
 Company-scoped append-only case evidence, Agent evidence append and scoped
 readback, human classification/assignment, engineering task reference,
@@ -2059,6 +2083,12 @@ locks while presenting effective-dated tax and currency facts. Migration 0044 br
 the shared Drizzle/PGlite/PostgreSQL schema to 127 tables. All routes at that milestone
 were Canonical and API-capable; TASK-101 subsequently adds Service Contract detail,
 bringing the current registry to **115 Canonical routes with Preview=0**.
+
+As of 2026-09-25, the Master Control summary comes from the shared Demo/API
+control-plane command:
+tenant companies, active human users in the current Company, and tenant roles have
+explicit scopes. Disabled users remain visible in the user table but do not inflate
+the active-user card; the three cards use a dedicated responsive layout.
 
 ## Stable async navigation feedback (TASK-086, 2026-07-23)
 

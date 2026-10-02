@@ -788,3 +788,12 @@ html[data-background="night-sky"] .auth-panel{background:rgba(28,28,30,.82);bord
 html[data-theme="dark"][data-background="mist"]{--workspace-background:radial-gradient(circle at 15% 0%,rgba(56,189,248,.13),transparent 30%),linear-gradient(145deg,#101820,#151b2a);}
 html[data-theme="dark"][data-background="mist"] .auth-view{background:radial-gradient(circle at 14% 12%,rgba(56,189,248,.18),transparent 32%),linear-gradient(145deg,#0d1720,#121c2d 58%,#0c1a2a);}
 html[data-theme="dark"][data-background="mist"] #setupWizardView.auth-view{background:radial-gradient(circle at 76% 16%,rgba(56,189,248,.20),transparent 30%),linear-gradient(145deg,#0d1720,#121c2d 58%,#0c1a2a);}
+
+/* Local startup diagnostics stay readable in the fixed wizard and mobile shell. */
+.demo-startup-diagnostic{border:1px solid var(--border);border-radius:12px;padding:12px;display:grid;gap:8px;min-width:0;font-size:12px;text-align:left;overflow-wrap:anywhere;background:var(--surface)}
+.demo-startup-diagnostic[hidden]{display:none}
+.demo-startup-diagnostic p{margin:0}
+.demo-diagnostic-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.demo-startup-diagnostic pre{white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%;user-select:text;font-size:11px}
+.demo-startup-diagnostic small{color:var(--muted)}
+.demo-startup-failure-view{z-index:2000}

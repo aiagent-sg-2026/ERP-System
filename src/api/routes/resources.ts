@@ -1,3 +1,4 @@
+import { resolveHrEmployeeAccessWithin } from '../../auth/hrDataAccess';
 import { Router } from 'express';
 import { and, eq, inArray } from 'drizzle-orm';
 import type { DB } from '../../data/db';
@@ -9,7 +10,7 @@ import { hasAnyAuthorization, authorize, principalFromSession } from '../../auth
 import { resolveScopedUserIds, type ScopeTarget } from '../../auth/dataScope';
 import { isModuleEnabled, moduleKeyForResourcePrefix } from '../../auth/moduleAccess';
 import type { SessionData } from '../../auth/session';
-import type { DataScope } from '../../auth/accessCatalog';
+import { fineGrainedActionPermission, type DataScope } from '../../auth/accessCatalog';
 import {
   InvalidResourceQueryError,
   UnknownResourceError,
@@ -117,13 +118,17 @@ import {
 export function createResourceRouter(db: DB): Router {
   const router = Router();
 
-  async function scopedReadContext(session: SessionData, resource: string, exec: DB = db) {
+  async function scopedReadContext(session: SessionData, resource: string, exec: DB = db, permissionOverride?: string | string[]) {
     const definition = resourceDefinitionFor(resource);
     const capabilities = await effectiveCapabilities(exec, session);
     const accessScope = scopeForResource(capabilities, resource);
     const scopeGrants = scopeGrantsForResource(capabilities, resource);
     if (!accessScope) {
       throw new ActionDispatchError(403, 'data_scope_denied', 'No data scope is assigned for this resource.');
+    }
+    if (resource === 'hr/employees' || resource === 'hr/leave-requests') {
+      const allowedEmployeeIds = await withTenantTransaction(exec, { masterFn: session.masterFn, companyFn: session.activeCompanyFn }, tx => resolveHrEmployeeAccessWithin(tx, session, resource, permissionOverride ?? readPermissionForResource(resource)));
+      return allowedEmployeeIds === null ? { accessScope: 'company' as const } : { accessScope: 'self' as const, allowedEmployeeIds };
     }
     if (accessScope === 'company') {
       const incompatibleCompanyTarget = scopeGrants.some((grant) =>
@@ -143,7 +148,7 @@ export function createResourceRouter(db: DB): Router {
       );
     }
     const rank: Record<DataScope, number> = {
-      self: 0, team: 1, department: 2, company: 3,
+      self: 0, team: 1, department: 2, business_unit: 2, position: 2, company: 3,
     };
     const grants = scopeGrants.length
       ? scopeGrants.filter((grant) => rank[grant.scope] <= rank[accessScope])
@@ -224,8 +229,8 @@ export function createResourceRouter(db: DB): Router {
         ], { resourceKey: resource })) {
           throw new ActionDispatchError(403, 'permission_denied', 'You cannot create this ERP resource.');
         }
-        if (resourceDefinition.scopeUserIdColumn) {
-          const access = await scopedReadContext(session, resource, tx);
+        if (resourceDefinition.scopeUserIdColumn || resource === 'hr/employees' || resource === 'hr/leave-requests') {
+          const access = await scopedReadContext(session, resource, tx, [createPermissionForResource(resource), createDefinition.permission]);
           if (access.accessScope && access.accessScope !== 'company') {
             const customerId = Number((payload as Record<string, unknown>).customerId);
             if (resource === 'sales/customers') {
@@ -465,7 +470,7 @@ export function createResourceRouter(db: DB): Router {
         masterFn: session.masterFn,
         companyFn: session.activeCompanyFn,
         actorUserId: session.userId,
-        ...await scopedReadContext(session, resource),
+        ...await scopedReadContext(session, resource, db, [updatePermissionForResource(resource), update.permission]),
       };
       const result = await withTenantTransaction(db, scope, async (tx) => {
         if (!await hasAnyAuthorization(tx, session, [
@@ -676,12 +681,12 @@ export function createResourceRouter(db: DB): Router {
       return;
     }
     try {
-      if (definition.scopeUserIdColumn) {
+      if (definition.scopeUserIdColumn || resource === 'hr/employees' || resource === 'hr/leave-requests') {
         const readScope = {
           masterFn: session.masterFn,
           companyFn: session.activeCompanyFn,
           actorUserId: session.userId,
-          ...await scopedReadContext(session, resource),
+          ...await scopedReadContext(session, resource, db, [fineGrainedActionPermission(resource, req.params.action, actionDefinition.permission), actionDefinition.permission]),
         };
         const visible = await withTenantTransaction(db, readScope, (tx) =>
           getResource(tx, readScope, resource, resourceId));

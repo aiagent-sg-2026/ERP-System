@@ -1,3 +1,7 @@
+import { assertDemoSchemaAsset, ensureDemoMigrationIdentity, initializeDemoDatabase, preflightDemoBootstrap, upgradeDemoSchema } from '../../src/demo/migrationIdentity';
+import { ensureDemoUniqueIndexes } from '../../src/demo/schemaIntegrity';
+import { listOrganizationWithin, saveOrganizationWithin, assignEmployeeOrganizationWithin, OrganizationError, type OrganizationKind } from '../../src/modules/hr/organization';
+import { resolveHrEmployeeAccessWithin, assertHrEmploymentEndAccessWithin, assertHrCompanyAccessWithin } from '../../src/auth/hrDataAccess';
 import { accessDemoDocumentWithin } from '../../src/data/demoDocumentAccess';
 import { readSetupModuleCatalogWithin } from '../../src/auth/moduleProvisioning';
 import { createDemoReceiptAssistantCommands } from '../../src/data/demoReceiptAssistant';
@@ -344,8 +348,10 @@ import {
 } from '../../src/modules/assets/depreciationRun';
 import {
   createEmployeeWithin,
+  endEmployeeEmploymentWithin,
   updateEmployeeWithin,
   type CreateEmployeeInput,
+  type EndEmployeeEmploymentInput,
   type UpdateEmployeeInput,
 } from '../../src/modules/hr/employee';
 import { projectEmployeeAnnualLeaveWithin } from '../../src/modules/hr/leaveBalance';
@@ -572,6 +578,12 @@ export const erpDemoRuntime = Object.freeze({
   },
   createOrm,
   sha256Hex,
+  ensureDemoUniqueIndexes,
+  ensureDemoMigrationIdentity,
+  assertDemoSchemaAsset,
+  preflightDemoBootstrap,
+  upgradeDemoSchema,
+  initializeDemoDatabase,
   setupModuleCatalog: Object.freeze(COMMERCIAL_MODULE_CATALOG.map((definition) => Object.freeze({
     ...definition,
     dependencies: Object.freeze([...definition.dependencies]),
@@ -1157,7 +1169,8 @@ export const erpDemoRuntime = Object.freeze({
     resetEmployeeAccount(db: DemoOrm, scope: Scope, input: ResetEmployeeAccountInput) {
       return resetEmployeeAccount(asDomainDb(db), scope, input);
     },
-    offboardEmployeeAccount(db: DemoOrm, scope: Scope, input: OffboardEmployeeInput) {
+    async offboardEmployeeAccount(db: DemoOrm, scope: Scope, input: OffboardEmployeeInput) {
+      await assertHrCompanyAccessWithin(asDomainDb(db), demoSession(scope, input.actorUserId));
       return offboardEmployeeAccount(asDomainDb(db), scope, input);
     },
     getArAgingOptions(
@@ -1545,6 +1558,13 @@ export const erpDemoRuntime = Object.freeze({
     ) {
       return updateEmployeeWithin(asDomainDb(db), scope, employeeId, input);
     },
+    async endEmployeeEmploymentWithin(
+      db: DemoOrm, scope: Scope, employeeId: number, input: EndEmployeeEmploymentInput,
+    ) {
+      await assertHrEmploymentEndAccessWithin(asDomainDb(db), demoSession(scope, input.actorUserId),
+        employeeId, input.handoffEmployeeId ?? null);
+      return endEmployeeEmploymentWithin(asDomainDb(db), scope, employeeId, input);
+    },
     projectEmployeeAnnualLeaveWithin(db: DemoOrm, scope: Scope, employeeId: number) {
       return projectEmployeeAnnualLeaveWithin(asDomainDb(db), scope, employeeId);
     },
@@ -1801,6 +1821,24 @@ export const erpDemoRuntime = Object.freeze({
     },
     listRoleTemplates() {
       return listRoleTemplates();
+    },
+    hrEmployeeAccessWithin(db: DemoOrm, scope: Scope, actorUserId: number, resource: string, permission: string) {
+      return resolveHrEmployeeAccessWithin(asDomainDb(db), demoSession(scope, actorUserId), resource, permission);
+    },
+    async organizationList(db: DemoOrm, scope: Scope, actorUserId: number, kind: OrganizationKind) {
+      const access = await resolveHrEmployeeAccessWithin(asDomainDb(db), demoSession(scope, actorUserId), 'hr/employees', 'hr.read');
+      if (access !== null) throw new OrganizationError('data_scope_denied', 'Company scope is required.', 403);
+      return listOrganizationWithin(asDomainDb(db), scope, kind);
+    },
+    async organizationSave(db: DemoOrm, scope: Scope, actorUserId: number, kind: OrganizationKind, input: Parameters<typeof saveOrganizationWithin>[4]) {
+      const access = await resolveHrEmployeeAccessWithin(asDomainDb(db), demoSession(scope, actorUserId), 'hr/employees', 'hr.write');
+      if (access !== null) throw new OrganizationError('data_scope_denied', 'Company scope is required.', 403);
+      return saveOrganizationWithin(asDomainDb(db), scope, { userId: actorUserId, requestId: 'demo-organization-save' }, kind, input);
+    },
+    async organizationAssign(db: DemoOrm, scope: Scope, actorUserId: number, input: Parameters<typeof assignEmployeeOrganizationWithin>[3]) {
+      const access = await resolveHrEmployeeAccessWithin(asDomainDb(db), demoSession(scope, actorUserId), 'hr/employees', 'hr.write');
+      if (access !== null) throw new OrganizationError('data_scope_denied', 'Company scope is required.', 403);
+      return assignEmployeeOrganizationWithin(asDomainDb(db), scope, { userId: actorUserId, requestId: 'demo-organization-assignment' }, input);
     },
     listRoleScopes(db: DemoOrm, scope: Scope) {
       return listRoleScopes(asDomainDb(db), scope.masterFn, scope.companyFn);

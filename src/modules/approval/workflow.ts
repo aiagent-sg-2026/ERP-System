@@ -24,6 +24,7 @@ import {
   type AuthorizationContext,
   type AuthorizationScopeTarget,
 } from '../../auth/authorization';
+import { resolveHrEmployeeAccessWithin } from '../../auth/hrDataAccess';
 import { activeRoleAssignmentCondition } from '../../auth/roleAssignmentState';
 
 export class ApprovalWorkflowError extends Error {
@@ -636,14 +637,23 @@ async function authorizeDecision(
   }
   const authorizationContext = approvalAuthorizationContext(instance, step, scope);
   if (step.currentAuthorityType === 'permission' && step.currentAuthorityPermissionKey) {
-    if (!await hasPermissionWithin(
-      exec,
-      scope,
-      actorUserId,
-      step.currentAuthorityPermissionKey,
-      now,
-      authorizationContext,
-    )) {
+    const subjectDecision = await authorizeWithin(exec,
+      { userId: actorUserId, masterFn: scope.masterFn, companyFn: scope.companyFn },
+      step.currentAuthorityPermissionKey, {
+        now, resourceKey: authorizationContext.resourceKey, scopeTarget: authorizationContext.scopeTarget,
+        requireScope: true, context: authorizationContext.authorizationContext,
+      });
+    const hrLeave = instance.domain === 'leave' && instance.entityType === 'leave_request';
+    const staffAccess = hrLeave ? await resolveHrEmployeeAccessWithin(exec, {
+      userId: actorUserId, masterFn: scope.masterFn, activeCompanyFn: scope.companyFn,
+      username: '', email: null, fullName: null,
+    }, 'hr/leave-requests', step.currentAuthorityPermissionKey, {
+      now, context: authorizationContext.authorizationContext,
+    }) : [];
+    const permitted = hrLeave
+      ? staffAccess === null || !!instance.subjectEmployeeId && staffAccess.includes(instance.subjectEmployeeId)
+      : await hasPermissionWithin(exec, scope, actorUserId, step.currentAuthorityPermissionKey, now, authorizationContext);
+    if (subjectDecision.reasonCode === 'DENY_EXPLICIT' || !permitted) {
       throw new ApprovalWorkflowError(
         'approval_authority_required',
         'The signed-in user does not hold the required approval authority.',

@@ -1,5 +1,16 @@
 # ERP-System Project Logic
 
+Home monetary KPIs — 2026-09-25: `web/public/assets/screens-ops.js` shows
+Open order value and MTD revenue only for active Sales with `sales.read`, and
+Cash position only for active Finance with `finance.read`. `/api/dashboard`
+checks current permission and effective Company module entitlement before
+reading Sales, Finance or Inventory facts; denied metrics are `null` and
+unavailable values display as `—`, never a fabricated zero. The canonical
+`src/api/dashboard.ts` read model uses Company-scoped draft and pending-approval
+orders, account `1000` debit less credit for cash, and account `4000` credit
+less debit posted in the current month of the Company's IANA time zone. The
+Demo adapter derives the same values from local canonical facts.
+
 Product feedback implementation candidate — 2026-09-25: `src/data/schema/productFeedback.ts`
 defines Company-scoped `product_case`, append-only `product_case_evidence` and
 `product_case_event` records, separate
@@ -549,6 +560,33 @@ contract fixtures precede the real G02/G03 transports; G06 must bind the complet
 reviewed receipt selection atomically, including newly matching rows. These are
 implementation requirements, not changes to the existing Pack command or domain
 contract. Existing key replay and current-visibility checks remain authoritative.
+
+## Static Demo startup identity and diagnostics — TASK-258 candidate
+
+The browser Demo transport validates canonical schema-prefix identities and
+source SQL hashes before migration, with a single transaction for ordered
+compatibility SQL, numeric marker and final identity. New schema/seed/examples
+are atomic too. A bare118 marker is not lineage proof: only exact source-derived
+canonical117 metadata can take the bounded HR organization DDL. Material type,
+constraint, index, sequence-option, append-only trigger/function or recorded
+identity drift fails closed without data/authority repair. The existing28 startup
+unique-arbiter validator remains separately responsible for its narrow additive
+ordinary-index contract. Additional unrelated tables/functions are preserved.
+
+Source entry points: `src/demo/migrationIdentity.ts`, `schemaLineage.ts`, the
+generated `schemaLineage.generated.ts`, and `scripts/generate-demo-schema-lineage.ts`;
+`web/public/assets/erp-system-data-adapter.js` orchestrates the classic adapter
+through `web/src/erp-demo-runtime-impl.ts`. `demo-startup-diagnostics.js` projects
+only safe source identifiers and readiness/build metadata. Failed wizard/login
+input and stored session/setup flags survive diagnosis; immediate/late failed
+signed-in startup is locked behind a diagnostic-only shell. No automatic reset,
+deduplication, record edit, grant activation or third-party diagnostic upload occurs.
+
+This is transport safety, not a Demo-only domain rule or production migration/RLS
+change. [Evidence and blockers](evidence/TASK-258-demo-lineage-diagnostics.md)
+separate synthetic source proof from owner root cause, browser certification,
+exact-head CI and production/UAT. No merge/release readiness is claimed.
+
 
 ## AI Native target and implementation boundary — 2026-09-09
 
@@ -1554,6 +1592,26 @@ For a code change, also check `docs/STATUS.md`, `docs/SPEC.md`, the API route an
 the Demo/API adapter path affected by the change. For this documentation-only sync,
 the minimum local checks are `git diff --check` and Markdown/link inspection.
 
+### Tenant control summary contract
+
+`getMasterControlWithin` in `src/modules/admin/controlPlane.ts` owns the tenant
+control read model. Both `/api/admin/master-control` and the browser Demo adapter
+call this command with the authenticated/session-derived `masterFn` and active
+`companyFn`; neither frontend path calculates the summary independently.
+
+| Summary field | Scope and meaning |
+| --- | --- |
+| `tenantCompanies` | Companies belonging to the session Master. |
+| `activeCompanyUsers` | Human users assigned to the active Company whose account `isActive` is true. Disabled users remain in the Company user table for administration. |
+| `tenantRoles` | Roles belonging to the session Master, excluding the hidden Platform Tenant Admin template. |
+
+The Company table's `userCount` is the number of human Company memberships,
+including disabled accounts. Its broader meaning is deliberate and is kept
+separate from `activeCompanyUsers`. The UI labels each summary card's scope and
+uses the command's `summary` object directly. Tests in
+`src/modules/admin/controlPlane.test.ts` cover the disabled-user distinction and
+Master/Company isolation.
+
 ## 10. Module Access Control — current logic and approved replacement
 
 Current source truth (verified 2026-08-12):
@@ -1783,3 +1841,42 @@ this editor. The production API uses the shared action dispatcher with a
 required idempotency key; Demo calls the same domain command. The UI is in
 `web/public/assets/company-profile-ui.js`, with desktop/375px browser and
 PGlite read-back evidence in `docs/evidence/TASK-252-company-profile.md`.
+## HR organization and scoped access — local candidate 2026-09-30
+
+Company-owned BU/Position masters and nullable staff assignments grant no rights.
+Shared live HR staff projection now covers generic resources, dedicated employee
+and Leave routes, and governed permission-based approval. Explicit targets require
+active same-Company masters and an active actor assignment; stale/unassigned or
+cross-Company access fails closed. Company-only administration prevents self-moving
+to widen authority. No production grants or data changed. Additive migrations
+0118_classy_ronan on remote main 1b0a4c3 and disposable PostgreSQL RLS/backup rehearsal are documented in
+[HR organization slice](HR_ORGANIZATION_SLICE.md). TASK-256 remains in progress
+until committed source CI and reviewed migration/release evidence are complete.
+
+## Static Demo startup and sample entry — 2026-10-01
+
+Sample entry on the wizard and sign-in screen uses the existing allowlisted
+fictional administrator and seeded C-SG workspace. It changes browser session
+preferences only; existing Company/employee data remains intact. It is absent
+from the API adapter. Setup writes require fully ready PGlite, and late recovery
+retains typed wizard inputs. See [startup incident and coverage boundaries](evidence/DEMO-STARTUP-2026-10-01.md).
+
+## Demo startup unique-index contract — TASK-257 candidate
+
+Static Demo validates the canonical unique arbiters used by startup fixture upserts
+via `src/demo/schemaIntegrity.ts`, using generated metadata from the current schema
+and explicit fixture targets. Table/column signatures and migration markers alone
+are insufficient. Missing ordinary indexes may be recreated transactionally;
+duplicate data, mismatched definitions and lost primary constraints fail closed.
+No records, role assignments, grants or migration markers are changed by this
+repair. API/PostgreSQL mode never invokes it. Retained draft top-up runs after
+compatibility and index validation. See [bounded evidence](evidence/TASK-257-retained-demo-schema.md).
+
+Company profile migration integration — 2026-10-02: remote HR migration
+`0118_classy_ronan` retains its published identity. The local Company profile
+migration is regenerated as `0119_company_profile`, with a combined snapshot and
+regenerated Demo SQL, unique-index metadata and structural lineage. Existing
+canonical HR Demo storage upgrades through the ordered migration runner; the
+historical local `0118_lucky_randall` browser lineage remains unsupported and
+fails closed without resetting records. This merge is local integration evidence,
+not a production migration or release.

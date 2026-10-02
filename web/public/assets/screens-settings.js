@@ -282,7 +282,7 @@ SCREENS['settings'] = async function(root, params){
     },};
   const copy=i18nLegacy(COPY);
   const s=key=>copy[key]||COPY.en[key]||key;
-  const row=(title,desc,control,top=false)=>`<div class="set-row${top?' top':''}">
+  const row=(title,desc,control,top=false,extraClass='')=>`<div class="set-row${top?' top':''}${extraClass?' '+extraClass:''}">
     <div class="set-row-t"><b>${esc(title)}</b>${desc?`<small>${esc(desc)}</small>`:''}</div>
     <div class="set-row-c">${control}</div></div>`;
   const seg=(group,options,current)=>`<div class="seg" data-seg="${group}">${options.map(option=>
@@ -351,7 +351,7 @@ SCREENS['settings'] = async function(root, params){
       `<button class="set-pal ${p.id===storedPalette?'on':''}" data-c="${p.light.accent}" data-name="${p.id}" aria-label="${t(paletteLabelKey[p.id]||'appearance.ariaBlue')}">
         <span class="set-pal-sw">${p.swatches.map(c=>`<i style="background:${c}"></i>`).join('')}</span>
         <span class="set-pal-l">${t(paletteLabelKey[p.id]||'appearance.ariaBlue')}</span></button>`
-    ).join('')}</div>`)}
+    ).join('')}</div>`,false,'set-row-wide')}
     ${row(s('accent'),s('accentDesc'),`<div class="set-swatches">${accents.map(a=>
       `<button class="set-sw ${a[0]===storedAccent?'on':''}" data-c="${a[0]}" style="background:${a[0]}" aria-label="${a[1]}"></button>`
     ).join('')}</div>`)}
@@ -370,7 +370,7 @@ SCREENS['settings'] = async function(root, params){
     .map(item=>[item.code,item.native]);
   const browserTimeZone=Intl.DateTimeFormat().resolvedOptions().timeZone||'—';
   const localization=panel('set-localization','location',s('localization'),`
-    ${row(s('language'),s('languageDesc'),seg('language',languageOptions,lang))}
+    ${row(s('language'),s('languageDesc'),seg('language',languageOptions,lang),false,'set-row-wide')}
     ${row(s('timeZone'),'',cap(browserTimeZone,'accent'))}
     ${row(s('currency'),'',cap(companyCurrency,'accent'))}`);
 
@@ -429,16 +429,28 @@ SCREENS['settings'] = async function(root, params){
   const sections=[...root.querySelectorAll('.set-sec')];
   const navItems=[...root.querySelectorAll('.set-navitem')];
   const topOf=element=>element.getBoundingClientRect().top-scroller.getBoundingClientRect().top+scroller.scrollTop;
+  const setActiveSection=id=>navItems.forEach(item=>{
+    const active=item.dataset.target===id;
+    item.classList.toggle('on',active);
+    if(active) item.setAttribute('aria-current','location');
+    else item.removeAttribute('aria-current');
+  });
   function spy(){
     const scrollTop=scroller.scrollTop+40;
     let current=sections[0]&&sections[0].id;
     sections.forEach(section=>{ if(topOf(section)<=scrollTop) current=section.id; });
-    navItems.forEach(item=>item.classList.toggle('on',item.dataset.target===current));
+    const maxScroll=scroller.scrollHeight-scroller.clientHeight;
+    if(maxScroll>2&&scroller.scrollTop>=maxScroll-2) current=sections[sections.length-1].id;
+    setActiveSection(current);
+  }
+  function scrollToSection(section){
+    scroller.scrollTop=Math.max(0,topOf(section)-8);
+    spy();
   }
   scroller.addEventListener('scroll',spy);
   navItems.forEach(item=>item.addEventListener('click',()=>{
     const section=root.querySelector('#'+item.dataset.target);
-    if(section) scroller.scrollTop=Math.max(0,topOf(section)-8);
+    if(section) scrollToSection(section);
   }));
 
   root.querySelectorAll('.seg[data-seg]').forEach(control=>{
@@ -519,6 +531,6 @@ SCREENS['settings'] = async function(root, params){
   if(params&&params.section){
     const item=navItems.find(candidate=>candidate.dataset.target===params.section);
     const section=item&&root.querySelector('#'+params.section);
-    if(section) scroller.scrollTop=Math.max(0,topOf(section)-8);
+    if(section) scrollToSection(section);
   }
 };

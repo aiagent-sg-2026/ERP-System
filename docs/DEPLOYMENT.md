@@ -1,7 +1,48 @@
 # Deployment
 
+System Settings layout release — 2026-09-25: revision
+`bc9cf0595dbd6a5580e47bad832f7394bf99eeb3` is live at
+`https://gmb01.xyz/erp/` in Compose project `erp-system-production-fresh`.
+The application-only release preserved the healthy PostgreSQL container and ran
+no migration or seed. The loopback verifier passed all seven checks and matched
+all 126 asset hashes. The public manifest reports the same revision, and all
+126 assets matched when requested with that revision as a query parameter.
+Local browser checks of the real screen renderer and stylesheet covered
+320px, 375px, 620px, 842px and 1280px, five languages, long company names,
+dark theme, input focus and page scrolling with no document overflow or console
+errors. Company facts now uses a responsive definition list within one panel;
+policy fields have associated labels, consistent spacing and a separate save
+action. The standard public verifier still reports `asset_bytes_mismatch` for
+Cloudflare's stale unversioned `erp-blocks.css`; the released HTML references
+the verified version-qualified CSS and screen script.
+
+Company onboarding layout release — 2026-09-25: revision
+`9c535505f97e30f6a93cfc9f7c6bc34a9c3f5cf6` is live at
+`https://gmb01.xyz/erp/` in Compose project `erp-system-production-fresh`.
+The application-only release preserved the healthy PostgreSQL container and ran
+no migration or seed. The loopback release verifier matched revision and all
+126 asset hashes. The public release manifest and version-qualified requests
+matched all 126 assets; a fresh authenticated 842px browser reload showed the
+eight onboarding stages in a readable 4-by-2 grid without horizontal overflow.
+The live-status copy now matches the Company state. Cloudflare still serves a
+cached older `erp-blocks.css` at the unversioned URL, so the standard public
+verifier reports `asset_bytes_mismatch`; the HTML references the new CSS and JS
+with release-specific query versions, which were verified publicly.
+
+Dashboard KPI application hotfix — 2026-09-25: revision
+`7332545358942c88d5435da16187a6b5546cf513` was live at
+`https://gmb01.xyz/erp/` in Compose project `erp-system-production-fresh`.
+The application-only release recreated API, Web and calendar-worker without a
+database migration or seed. The PostgreSQL container kept the same ID and is
+healthy. The public release verifier passed root, health, setup status, revision
+matching and all 126 asset hashes. After a fresh browser reload, the employee
+simulation dashboard loaded the new `screens-ops.js` version and hid all three
+monetary KPIs under its effective module access. The KPI values follow Company
+order and ledger facts; see [project logic](PROJECT_LOGIC.md). This release
+supersedes the application revision in the next checkpoint.
+
 Product feedback initial release — 2026-09-24: revision
-`b8c0208aae430d26d672ce10f2a62ad88f068f71` is live at
+`b8c0208aae430d26d672ce10f2a62ad88f068f71` was live at
 `https://gmb01.xyz/erp/` in Compose project `erp-system-production-fresh`.
 An isolated restore of the pre-release production backup successfully rehearsed
 migration `0116_majestic_prowler` and the production RLS overlay before the

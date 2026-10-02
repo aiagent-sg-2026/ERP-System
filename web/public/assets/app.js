@@ -79,13 +79,39 @@ function wireAuthPasswordToggle(root,inputId,toggleId){
   toggle.addEventListener('click',()=>update(input.type!=='text'));
   update(false);
 }
+let demoAuthShellRendered=false;
 function setAuthShell(onLogin){
+  demoAuthShellRendered=true;
+  // A failed event can arrive while boot awaits its signed-in readers/route.
+  // Guard the final synchronous unlock too, even if that event preceded this flag.
+  if(!onLogin&&showDemoStartupFailure())return;
   const bootLoading=$('#bootLoadingView');
   if(bootLoading) bootLoading.remove();
   document.body.classList.toggle('auth-locked',!!onLogin);
   const app=$('#app'), tabs=$('#tabbar');
   if(app) app.setAttribute('aria-hidden',onLogin?'true':'false');
   if(tabs) tabs.setAttribute('aria-hidden',onLogin?'true':'false');
+}
+function showDemoStartupFailure(){
+  if(typeof window.erpDataMode==='function'&&window.erpDataMode()==='api')return false;
+  if(!window.__ERP_DEMO_PROGRESS__||window.__ERP_DEMO_PROGRESS__.phase!=='failed')return false;
+  // Keep entered wizard/login values in place. A late failure must not discard them.
+  if(document.body.classList.contains('auth-locked')&&(document.getElementById('setupWizardView')||document.getElementById('authView'))){
+    if(window.ErpDemoDiagnostics)window.ErpDemoDiagnostics.render();
+    return true;
+  }
+  let host=document.getElementById('demoFailureView');
+  if(!host){
+    host=document.createElement('main');host.id='demoFailureView';host.className='auth-view demo-startup-failure-view';host.tabIndex=-1;
+    host.setAttribute('aria-label','Local demo startup failure');
+    const copy=demoStartupCopy();
+    host.innerHTML='<section class="auth-panel"><h2>Aria ERP</h2><p class="auth-help" role="alert">'+esc(copy.failed)+'</p><div data-demo-diagnostic hidden></div></section>';
+    document.body.insertBefore(host,document.getElementById('app'));
+  }
+  setAuthShell(true);
+  if(window.ErpDemoDiagnostics)window.ErpDemoDiagnostics.render();
+  host.focus();
+  return true;
 }
 function syncDemoBootProgress(payload=window.__ERP_DEMO_PROGRESS__){
   if(!payload||!document.getElementById('bootLoadingView')) return;
@@ -104,7 +130,10 @@ function syncDemoBootProgress(payload=window.__ERP_DEMO_PROGRESS__){
   if(bar) bar.setAttribute('aria-valuenow',String(progress));
   if(fill) fill.style.width=progress+'%';
 }
-if(typeof window!=='undefined') window.addEventListener('erp:demo-progress',event=>syncDemoBootProgress(event.detail));
+if(typeof window!=='undefined') window.addEventListener('erp:demo-progress',event=>{
+  syncDemoBootProgress(event.detail);
+  if(demoAuthShellRendered&&event.detail&&event.detail.phase==='failed')showDemoStartupFailure();
+});
 function syncAccountUi(){
   const u=demoUser();
   const av=$('#avatarBtn');
@@ -210,6 +239,7 @@ function renderLogin(){
      be reached, so DB.company.name is trustworthy there. */
   const apiMode=typeof window.erpDataMode==='function' && window.erpDataMode()==='api';
   const demoOneClickAvailable=!apiMode&&(!window.ErpSystemDemo||window.ErpSystemDemo.demoOneClickAvailable!==false);
+  const showcaseCopy=!apiMode?demoStartupCopy():null;
   const companyLabel=(!apiMode && DB.company && DB.company.name) ? (esc(DB.company.name)+' · Static demo') : (apiMode?'Production':'Static demo');
   setAuthShell(true);
   closeAllPops();
@@ -247,7 +277,7 @@ function renderLogin(){
       ${apiMode?'<p class="auth-help">Use the credentials created during first-run setup. The password is never stored in this browser.</p>':''}
       <button class="btn primary lg" type="submit">${ic('signout')}<span>Sign in</span></button>
       ${demoOneClickAvailable?`<button class="btn soft lg" type="button" id="demoLoginBtn">${ic('user')}<span>Continue as ${esc(u.name)}</span></button>`:''}
-      ${!apiMode?`<div class="auth-demo-actions">
+      ${!apiMode?`<div class="auth-help" role="status" id="demoStartupStatus"></div><div data-demo-diagnostic hidden></div><button class="btn soft lg" type="button" id="loginShowcase" ${window.ErpSystemData?.databaseReady===true?'':'disabled'}>${esc(showcaseCopy.entry)}</button><div class="auth-demo-actions">
         <button class="btn soft" type="button" id="demoResetBtn">${ic('refresh')}<span>Reset demo database</span></button>
         <small>Restore the original demo data in this browser.</small>
       </div>`:''}
@@ -311,6 +341,13 @@ function renderLogin(){
     }
     doLogin(u.email);
   });
+  const showcaseBtn=$('#loginShowcase');
+  showcaseBtn&&showcaseBtn.addEventListener('click',async()=>{
+    showcaseBtn.disabled=true;
+    try{await window.ErpSystemData.openShowcase();location.reload();}
+    catch(error){$('#loginError').textContent=error.code==='demo_sample_access_denied'?showcaseCopy.denied:error.message;showcaseBtn.disabled=false;}
+  });
+  if(!apiMode)updateDemoStartupControls();
   const demoResetBtn=$('#demoResetBtn');
   demoResetBtn&&demoResetBtn.addEventListener('click',()=>{
     const adapter=window.ErpSystemData;
@@ -2498,6 +2535,9 @@ async function boot(){
     renderSetupWizard();
     return;
   }
+  // A retained local signed-in flag never authorizes a failed fallback workspace.
+  // Preserve the stored flags and data; the failure shell offers diagnosis/retry only.
+  if(!apiMode&&showDemoStartupFailure())return;
   const signedIn = (ed && typeof ed.isSignedIn==='function') ? await ed.isSignedIn() : isDemoSignedIn();
   if(!signedIn){
     if(typeof window.erpDataMode==='function' && window.erpDataMode()==='api'

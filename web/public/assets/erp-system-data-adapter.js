@@ -37,7 +37,7 @@
   var PG_DATA_DIR = 'idb://erp-system-demo';
   var PG_IDB_NAME = '/pglite/erp-system-demo';
   var BOOT_TIMEOUT_MS = 45000;
-  var DEMO_SCHEMA_VERSION = 118;
+  var DEMO_SCHEMA_VERSION = 119;
   var DEMO_PACK_VERSION = '16';
   var DEMO_IMPERSONATOR_KEY = 'aria-demo-impersonator-email';
 
@@ -136,7 +136,7 @@
   })();
 
   var state = {
-    db: null, orm: null, runtime: null, mode: 'pending', activeUserId: null,
+    db: null, orm: null, runtime: null, initialized: false, mode: 'pending', activeUserId: null,
     setupModuleCatalog: [],
     demoPack: null, demoPackAvailable: null,
   };
@@ -169,22 +169,35 @@
   function fetchSql(name){
     var separator=name.indexOf('?')===-1?'?':'&';
     return fetch(DB_BASE + name + separator + 'v=' + DEMO_SCHEMA_VERSION).then(function(r){
-      if (!r.ok) throw new Error('fetch ' + name + ' -> HTTP ' + r.status);
+      if (!r.ok) throw Object.assign(new Error('Demo asset could not load.'),{code:'demo_asset_fetch_failed',demoBootStatement:name});
       return r.text();
-    });
+    }).catch(function(error){throw Object.assign(new Error('Demo asset could not load.'),{code:'demo_asset_fetch_failed',demoBootStatement:name,cause:error});});
   }
 
   function fetchJson(name){
     return fetch(DB_BASE + name + '?v=' + encodeURIComponent(DEMO_PACK_VERSION)).then(function(r){
-      if (!r.ok) throw new Error('fetch ' + name + ' -> HTTP ' + r.status);
+      if (!r.ok) throw Object.assign(new Error('Demo asset could not load.'),{code:'demo_asset_fetch_failed',demoBootStatement:name});
       return r.json();
-    });
+    }).catch(function(error){throw Object.assign(new Error('Demo asset could not load.'),{code:'demo_asset_fetch_failed',demoBootStatement:name,cause:error});});
+  }
+
+  async function execBootStatement(db, statement, sqlText){
+    try { return await db.exec(sqlText); }
+    catch(error){
+      // Labels are source-owned filenames/identifiers; never retain SQL or row values.
+      if(error && typeof error==='object' && !error.demoBootStatement) error.demoBootStatement=statement;
+      throw error;
+    }
+  }
+
+  async function execBootAsset(db, name){
+    return execBootStatement(db, name, await fetchSql(name));
   }
 
   async function ensureShowcasePack(db, freshlySeeded){
     var manifest = await fetchJson('erp-system-showcase-v1.json');
     if(!manifest || manifest.version !== DEMO_PACK_VERSION || !manifest.sha256){
-      throw new Error('Demo showcase manifest is invalid.');
+      throw Object.assign(new Error('Demo showcase manifest is invalid.'),{code:'demo_manifest_invalid',demoBootStatement:'erp-system-showcase-v1.json'});
     }
     var current = await db.query("select value from system_state where key='demo_showcase_pack' limit 1");
     if(current.rows[0] && current.rows[0].value && current.rows[0].value.version === DEMO_PACK_VERSION){
@@ -199,16 +212,16 @@
     }
     var sqlText = await fetchSql('erp-system-showcase-v1.sql');
     var digest = await state.runtime.sha256Hex(sqlText);
-    if(digest !== manifest.sha256) throw new Error('Demo showcase pack integrity check failed.');
+    if(digest !== manifest.sha256) throw Object.assign(new Error('Demo showcase pack integrity check failed.'),{code:'demo_pack_integrity_failed',demoBootStatement:'erp-system-showcase-v1.sql'});
     var started = performance.now();
-    await db.exec(sqlText);
+    await execBootStatement(db, 'erp-system-showcase-v1.sql', sqlText);
     state.demoPack = Object.assign({}, manifest, { loadMs: Math.round(performance.now()-started) });
     return true;
   }
 
   async function ensureCompanyReceiptReadFixture(db){
     var sqlText = await fetchSql('erp-system-demo-company-receipts.sql');
-    await db.exec(sqlText);
+    await execBootStatement(db, 'erp-system-demo-company-receipts.sql', sqlText);
   }
 
   async function ensureSeeded(db){
@@ -222,26 +235,32 @@
     }
     if (!seeded) {
       var schema = await fetchSql('erp-system-schema.sql');
+      await state.runtime.assertDemoSchemaAsset('erp-system-schema.sql',schema);
       var txn = await fetchSql('erp-system-demo-txn.sql');
-      await db.exec(schema);
-      await state.runtime.commands.seedDemo(state.orm);
-      await db.exec(txn);
-      /* The flat schema already contains the complete ordered migration chain.
-         Mark it current immediately so a brand-new browser database never
-         replays legacy data migrations against today's constraints. */
-      await db.exec(
-        'create table if not exists "_erp_demo_migration" (' +
-        '"version" integer primary key, "applied_at" timestamptz not null default now());' +
-        'insert into "_erp_demo_migration" ("version") values (' + DEMO_SCHEMA_VERSION + ') ' +
-        'on conflict ("version") do nothing;');
+      await state.runtime.initializeDemoDatabase(db,async function(tx){
+        await execBootStatement(tx, 'erp-system-schema.sql', schema);
+        try { await state.runtime.commands.seedDemo(state.runtime.createOrm(tx)); }
+        catch(error){if(error && typeof error==='object')error.demoBootStatement='canonical seedDemo';throw error;}
+        await execBootStatement(tx, 'erp-system-demo-txn.sql', txn);
+        /* Schema, canonical seed, transaction examples and marker commit together.
+           An interrupted first visit cannot leave a partially seeded master. */
+        await tx.exec(
+          'create table if not exists "_erp_demo_migration" (' +
+          '"version" integer primary key, "applied_at" timestamptz not null default now());' +
+          'insert into "_erp_demo_migration" ("version") values (' + DEMO_SCHEMA_VERSION + ') ' +
+          'on conflict ("version") do nothing;');
+      });
     }
+    return !seeded;
+  }
+
+  async function ensureDemoDrafts(db){
     /* top-up: demo draft orders (idempotent — skips existing doc_no's), so
        databases seeded before TASK-007 gain the Confirm-flow drafts too */
     var drafts = await db.query(
       "select count(*)::int as n from sales_order " +
       "where master_fn='M1' and company_fn='C-SG' and doc_no in ('SO-2','SO-3')");
-    if (drafts.rows[0].n < 2) await db.exec(await fetchSql('erp-system-demo-drafts.sql'));
-    return !seeded;
+    if (drafts.rows[0].n < 2) await execBootAsset(db, 'erp-system-demo-drafts.sql');
   }
 
   /* Upgrade IndexedDB databases created by older demo builds. Fresh databases
@@ -361,6 +380,7 @@
     }
 
     var migrationSql = await fetchSql('erp-system-migrations.sql');
+    await state.runtime.assertDemoSchemaAsset('erp-system-migrations.sql',migrationSql);
     var headers = [];
     var headerPattern = /^-- (\d{4})_[^\n]+$/gm;
     var match;
@@ -369,7 +389,7 @@
     }
     var pending = headers.filter(function(header){ return header.version > currentVersion; });
     if (!pending.length) throw new Error('Demo migration bundle has no pending migration for schema drift.');
-    await db.exec(migrationSql.slice(pending[0].offset));
+    await execBootStatement(db, 'erp-system-migrations.sql', migrationSql.slice(pending[0].offset));
     await db.exec(
       'drop index if exists "uq_role_master_name";' +
       'create unique index if not exists "uq_role_company_name" ' +
@@ -422,7 +442,7 @@
       "select count(*)::int as n from warehouse_pick " +
       "where master_fn='M1' and company_fn='C-SG' and doc_no='PICK-1'")).rows[0];
     if(!row||Number(row.n)===0){
-      await db.exec(await fetchSql('erp-system-demo-picks.sql'));
+      await execBootAsset(db, 'erp-system-demo-picks.sql');
     }
   }
 
@@ -430,35 +450,35 @@
     /* The fixture is entirely guarded by NOT EXISTS, so replay it on every
        boot. This also tops up newly required manufacturing accounts or
        snapshots in a persistent IndexedDB created by an earlier v9 build. */
-    await db.exec(await fetchSql('erp-system-demo-manufacturing.sql'));
+    await execBootAsset(db, 'erp-system-demo-manufacturing.sql');
   }
 
   async function ensureQualityFixture(db){
-    await db.exec(await fetchSql('erp-system-demo-quality.sql'));
+    await execBootAsset(db, 'erp-system-demo-quality.sql');
   }
 
   async function ensureSalesFrontFixture(db){
-    await db.exec(await fetchSql('erp-system-demo-sales-front.sql'));
+    await execBootAsset(db, 'erp-system-demo-sales-front.sql');
   }
 
   async function ensureSalesDeliveryFixture(db){
-    await db.exec(await fetchSql('erp-system-demo-sales-delivery.sql'));
+    await execBootAsset(db, 'erp-system-demo-sales-delivery.sql');
   }
 
   async function ensureSalesReturnFixture(db){
-    await db.exec(await fetchSql('erp-system-demo-sales-return.sql'));
+    await execBootAsset(db, 'erp-system-demo-sales-return.sql');
   }
 
   async function ensureSalesDebitFixture(db){
-    await db.exec(await fetchSql('erp-system-demo-sales-debit.sql'));
+    await execBootAsset(db, 'erp-system-demo-sales-debit.sql');
   }
 
   async function ensureSalesPricingFixture(db){
-    await db.exec(await fetchSql('erp-system-demo-sales-pricing.sql'));
+    await execBootAsset(db, 'erp-system-demo-sales-pricing.sql');
   }
 
   async function ensureSalesCreditFixture(db){
-    await db.exec(await fetchSql('erp-system-demo-sales-credit.sql'));
+    await execBootAsset(db, 'erp-system-demo-sales-credit.sql');
   }
 
   async function demoWorkspaceCompanies(db,email){
@@ -466,8 +486,12 @@
       'select distinct c.company_fn from app_user u '+
       'join user_company_role membership on membership.user_id=u.user_id '+
       'join company c on c.company_fn=membership.company_fn and c.master_fn=u.master_fn '+
+      'join role r on r.role_id=membership.role_id and r.master_fn=u.master_fn '+
+      'and (r.company_fn=c.company_fn or r.company_fn is null) '+
       'where u.master_fn=$1 and lower(u.email)=$2 and u.is_active=true '+
       "and u.identity_kind='human' and u.login_enabled=true and u.account_state<>'offboarded' "+
+      'and membership.revoked_at is null and membership.valid_from<=current_timestamp '+
+      'and (membership.valid_until is null or membership.valid_until>current_timestamp) '+
       'order by c.company_fn',[SCOPE.masterFn,email])).rows.map(function(row){ return row.company_fn; });
   }
 
@@ -510,13 +534,19 @@
       "coalesce(bool_or(r.source_template_key = 'company_owner'), false) as is_company_owner, " +
       "coalesce(array_agg(distinct r.name) filter (where r.name is not null), '{}') as roles, " +
       "coalesce(array_agg(distinct rp.permission_key) filter (where rp.allowed), '{}') as permissions, " +
-      "coalesce((select array_agg(distinct all_uc.company_fn) from user_company all_uc where all_uc.user_id=u.user_id), '{}') as companies " +
+      "'{}'::text[] as companies " +
       "from app_user u join user_company_role ucr on ucr.user_id = u.user_id and ucr.company_fn='" + SCOPE.companyFn + "' " +
-      "left join role r on r.role_id = ucr.role_id " +
-      "left join role_permission rp on rp.role_id = r.role_id " +
+      'and ucr.revoked_at is null and ucr.valid_from<=current_timestamp '+
+      'and (ucr.valid_until is null or ucr.valid_until>current_timestamp) '+
+      "join role r on r.role_id = ucr.role_id and r.master_fn=u.master_fn " +
+      "and (r.company_fn=ucr.company_fn or r.company_fn is null) " +
+      "left join role_permission rp on rp.role_id = r.role_id and rp.master_fn=u.master_fn " +
       "where " + w('u') + " and u.is_active and u.identity_kind='human' and u.login_enabled=true and u.account_state<>'offboarded' " +
       "group by u.user_id, u.username, u.email, u.full_name, u.language, " +
       "u.password_change_required, u.initial_password_expires_at, u.account_state order by u.user_id");
+    for(var userIndex=0;userIndex<users.length;userIndex++){
+      users[userIndex].companies=await demoWorkspaceCompanies(db,users[userIndex].email);
+    }
     var products = await rows(
       "select p.id, p.company_fn, p.sku, p.name, p.uom, p.standard_cost::float as standard_cost, " +
       "p.average_cost::float as average_cost, " +
@@ -583,7 +613,7 @@
       "from invoice i join customer c on c.id = i.customer_id " +
       "join sales_order o on o.id = i.order_id where " + wc('i') + " order by i.id");
     var glLegs = await rows(
-      "select g.journal_ref, a.code, a.name, g.debit::float as debit, g.credit::float as credit, g.memo " +
+      "select g.journal_ref, g.posted_at::text as posted_at, a.code, a.name, g.debit::float as debit, g.credit::float as credit, g.memo " +
       "from gl_entry g join account a on a.id = g.account_id " +
       "where " + wc('g') + " order by g.id");
     var movements = await rows(
@@ -724,9 +754,9 @@
       invoices: [{ doc_no: 'INV-SO-1', status: 'unpaid', invoice_date: '2024-06-01', currency: 'SGD',
                    net: 110, tax: 9.9, total: 119.9, customer: 'Beta Pte Ltd', customer_code: 'CUST1', order_no: 'SO-1' }],
       glLegs: [
-        { journal_ref: 'INV-SO-1', code: '1100', name: 'Accounts Receivable', debit: 119.9, credit: 0, memo: 'AR' },
-        { journal_ref: 'INV-SO-1', code: '4000', name: 'Revenue', debit: 0, credit: 110, memo: 'Revenue' },
-        { journal_ref: 'INV-SO-1', code: '2200', name: 'GST Output Tax', debit: 0, credit: 9.9, memo: 'Output tax' },
+        { journal_ref: 'INV-SO-1', posted_at: '2024-06-01T00:00:00Z', code: '1100', name: 'Accounts Receivable', debit: 119.9, credit: 0, memo: 'AR' },
+        { journal_ref: 'INV-SO-1', posted_at: '2024-06-01T00:00:00Z', code: '4000', name: 'Revenue', debit: 0, credit: 110, memo: 'Revenue' },
+        { journal_ref: 'INV-SO-1', posted_at: '2024-06-01T00:00:00Z', code: '2200', name: 'GST Output Tax', debit: 0, credit: 9.9, memo: 'Output tax' },
       ],
       movements: [
         { id: 1, qty: 5, direction: 'out', ref_type: 'sales_order', ref_id: 1, moved_at: '2024-06-01 09:00', sku: 'SG-WIDGET', name: 'Widget (SG)', warehouse: 'WH-SALES' },
@@ -1136,6 +1166,13 @@
     };
     var revAcct = d.accounts.filter(function(a){ return a.code === '4000'; })[0];
     var revenueTotal = revAcct ? Math.round((revAcct.credit - revAcct.debit) * 100) / 100 : orderNet;
+    var cashAcct = d.accounts.filter(function(a){ return a.code === '1000'; })[0];
+    var companyTimeZone = DB.company.timeZone || 'Asia/Singapore';
+    var monthFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: companyTimeZone, year: 'numeric', month: '2-digit' });
+    var currentMonth = monthFormatter.format(new Date());
+    var monthRevenue = d.glLegs.filter(function(l){
+      return l.code === '4000' && l.posted_at && monthFormatter.format(new Date(l.posted_at)) === currentMonth;
+    }).reduce(function(sum, l){ return sum + l.credit - l.debit; }, 0);
     DB.arAging = d.customers.map(function(c){
       return { cust: c.name, code: c.code, cur: c.balance, b30: 0, b60: 0, b90: 0, b90p: 0 };
     });
@@ -1177,10 +1214,10 @@
       goodsReceipts: 0,
       pickTasks: 0,
       leaveRequests: (d.leaveApprovals || []).filter(function(row){ return row.status === 'pending'; }).length,
-      openOrderValue: DB.salesOrders.filter(function(o){ return o.status !== 'Closed' && o.status !== 'Cancelled'; })
+      openOrderValue: DB.salesOrders.filter(function(o){ return o.status === 'Draft' || o.status === 'Pending Approval'; })
         .reduce(function(sum, o){ return sum + o.total; }, 0),
-      cash: 842000,
-      mtdSales: revenueTotal,
+      cash: cashAcct ? Math.round((cashAcct.debit - cashAcct.credit) * 100) / 100 : 0,
+      mtdSales: Math.round(monthRevenue * 100) / 100,
       cleared: 1,
     };
 
@@ -1220,9 +1257,13 @@
     state.runtime = runtime;
     try {
       reportBootProgress(12,'Preparing base demo records','Creating the canonical sample schema when needed…','loading');
+      await runtime.preflightDemoBootstrap(db);
       var freshlySeeded = await ensureSeeded(db);
       reportBootProgress(28,'Checking database compatibility','Applying safe local schema migrations…','loading');
-      await ensureSchemaUpToDate(db);
+      await runtime.upgradeDemoSchema(db,ensureSchemaUpToDate);
+      // Table/column presence and version markers do not prove ON CONFLICT arbiters exist.
+      await runtime.ensureDemoUniqueIndexes(db);
+      await ensureDemoDrafts(db);
       reportBootProgress(45,'Loading showcase data','Preparing the deterministic enterprise demo pack…','loading');
       var showcaseLoaded = await ensureShowcasePack(db, freshlySeeded);
       await ensureCompanyReceiptReadFixture(db);
@@ -1247,6 +1288,7 @@
       var payload = await readPayload(db);
       if (!payload.master) throw new Error('PGlite payload empty (no master row)');
       var wasFallback = appliedMode === 'fallback';
+      state.initialized = true;
       applyOnce(payload, 'pglite');
       reportBootProgress(100,'Demo database ready','Your local demo workspace is ready.','ready');
       console.info('[erp-system] demo data source: PGlite (' + PG_DATA_DIR + ')' +
@@ -1268,6 +1310,7 @@
     } catch (e) {
       /* Never leave a failed or stale database writable through completeSetup()
          or another mutation after the UI falls back to static data. */
+      state.initialized = false;
       state.db = null;
       state.orm = null;
       state.runtime = null;
@@ -1288,9 +1331,10 @@
       resolve();
     }).catch(function(e){
       clearTimeout(timer);
-      console.warn('[erp-system] PGlite unavailable — using static fallback.', e && e.message ? e.message : e);
+      window.__ERP_DEMO_FAILURE__ = window.ErpDemoDiagnostics?window.ErpDemoDiagnostics.failure(e,window.__ERP_DEMO_PROGRESS__ && window.__ERP_DEMO_PROGRESS__.title):{code:'demo_initialization_failed',stage:'Preparing local demo database',statement:null};
+      console.warn('[erp-system] PGlite unavailable — using static fallback.', window.__ERP_DEMO_FAILURE__);
       applyOnce(fallbackPayload(), 'fallback');
-      reportBootProgress(100,'Opening offline demo mode','The bundled demo view is ready for this session.','fallback');
+      reportBootProgress(100,'Opening offline demo mode','The local demo could not finish starting. Existing data has not been reset.','failed');
       resolve();
     });
   });
@@ -1298,7 +1342,7 @@
   /* Re-read everything from PGlite and re-apply to the Aria DB contract.
      Call after any write so the next render shows fresh data. */
   async function refresh(){
-    if (!state.db) return null;
+    if (!state.initialized || !state.db) return null;
     var payload = await readPayload(state.db);
     applyData(payload, 'pglite');
     return payload;
@@ -1308,7 +1352,7 @@
      by PostgreSQL. The adapter resolves legacy document/warehouse codes only;
      stock, state, invoice and GL rules live in confirmOrder.ts. */
   async function confirmOrder(docNo){
-    if (!state.db) throw new Error('Demo database unavailable (offline fallback) — Confirm needs PGlite.');
+    if (!state.initialized || state.mode !== 'pglite' || !state.db) throw new Error('Demo database unavailable (offline fallback) — Confirm needs PGlite.');
     var result = await state.db.transaction(async function(tx){
       var o = (await tx.query(
         'select id from sales_order where master_fn=$1 and company_fn=$2 and doc_no=$3',
@@ -1347,7 +1391,7 @@
      yet. Legacy input: { supplierCode, orderDate, currency,
      lines: [{ sku, qty, unitCost, taxCode }] }. */
   async function createPurchaseOrder(input){
-    if (!state.db) throw new Error('Demo database unavailable (offline fallback) — Create PO needs PGlite.');
+    if (!state.initialized || state.mode !== 'pglite' || !state.db) throw new Error('Demo database unavailable (offline fallback) — Create PO needs PGlite.');
     input = input || {};
     var lines = input.lines || [];
     if (!input.supplierCode) throw new Error('Supplier is required.');
@@ -1396,7 +1440,7 @@
      separate purchasing warehouse needed for the demo). Guards against
      receiving the same PO twice inside the shared command. */
   async function receiveGoods(poDocNo){
-    if (!state.db) throw new Error('Demo database unavailable (offline fallback) — Receive goods needs PGlite.');
+    if (!state.initialized || state.mode !== 'pglite' || !state.db) throw new Error('Demo database unavailable (offline fallback) — Receive goods needs PGlite.');
     var result = await state.db.transaction(async function(tx){
       var po = (await tx.query(
         'select id from purchase_order where master_fn=$1 and company_fn=$2 and doc_no=$3',
@@ -1428,7 +1472,7 @@
      Accounts Payable), gated on the PO already being 'received' — invoicing
      goods you haven't received is rejected inside the shared command. */
   async function postSupplierInvoice(poDocNo){
-    if (!state.db) throw new Error('Demo database unavailable (offline fallback) — Post invoice needs PGlite.');
+    if (!state.initialized || state.mode !== 'pglite' || !state.db) throw new Error('Demo database unavailable (offline fallback) — Post invoice needs PGlite.');
     var result = await state.db.transaction(async function(tx){
       var po = (await tx.query(
         'select id from purchase_order where master_fn=$1 and company_fn=$2 and doc_no=$3',
@@ -1457,7 +1501,7 @@
   /* createOpportunity.ts: a plain insert — stage starts at whatever the
      wizard's kanban-column choice was, no line items yet. */
   async function createOpportunity(input){
-    if (!state.db) throw new Error('Demo database unavailable (offline fallback) — Create opportunity needs PGlite.');
+    if (!state.initialized || state.mode !== 'pglite' || !state.db) throw new Error('Demo database unavailable (offline fallback) — Create opportunity needs PGlite.');
     var result = await state.db.transaction(async function(tx){
       var cust = (await tx.query(
         'select id from customer where master_fn=$1 and company_fn=$2 and code=$3',
@@ -1491,7 +1535,7 @@
      transaction: opportunity lock → order/line → stock → invoice → balanced
      GL → stage update. No browser-side copy of those business writes remains. */
   async function convertOpportunityToSalesOrder(opportunityNo, sku, qty, unitPrice){
-    if (!state.db) throw new Error('Demo database unavailable (offline fallback) — Convert needs PGlite.');
+    if (!state.initialized || state.mode !== 'pglite' || !state.db) throw new Error('Demo database unavailable (offline fallback) — Convert needs PGlite.');
     var result = await state.db.transaction(async function(tx){
       var opp = (await tx.query(
         'select id from opportunity where master_fn=$1 and company_fn=$2 and doc_no=$3',
@@ -1534,12 +1578,14 @@
   /* Switch the active company scope (topbar company switcher) and re-read.
      Same-master only today — SCOPE.masterFn stays fixed, matching the single-
      org demo model. */
-  function switchCompany(companyFn){
+  async function switchCompany(companyFn){
+    var db=requireDemoDb();
     if (!companyFn || companyFn === SCOPE.companyFn) return Promise.resolve(null);
     var active=(DB.erpSystem&&DB.erpSystem.users||[]).find(function(user){
       return Number(user.user_id)===Number(state.activeUserId);
     });
-    if(!active||!(active.companies||[]).includes(companyFn)){
+    var companies=active?await demoWorkspaceCompanies(db,active.email):[];
+    if(!active||!companies.includes(companyFn)){
       return Promise.reject(new Error('This Demo persona has no role in the selected company.'));
     }
     SCOPE.companyFn = companyFn;
@@ -1572,7 +1618,7 @@
   }
 
   async function completeSetup(input){
-    if (!state.db) throw new Error('Demo database unavailable (offline fallback) — Setup needs PGlite.');
+    if (!state.initialized || state.mode !== 'pglite' || !state.db) throw new Error('The local demo database is not ready. Setup has not been saved.');
     input = input || {};
     var companyName = String(input.companyName || '').trim();
     var organizationCode = String(input.organizationCode || '').trim().toUpperCase();
@@ -1626,7 +1672,7 @@
   }
 
   async function createStaffAccount(input){
-    if(!state.db) throw new Error('Demo database unavailable — Staff onboarding needs PGlite.');
+    if(!state.initialized||state.mode!=='pglite'||!state.db) throw new Error('Demo database unavailable — Staff onboarding needs PGlite.');
     input=input||{};
     if(!await state.runtime.commands.hasPermissionWithin(state.orm,SCOPE,Number(state.activeUserId),'hr.write')) throw new Error('HR write permission is required.');
     var initialPassword=newDemoTemporaryPassword();
@@ -1690,6 +1736,7 @@
         await state.db.exec('drop schema public cascade; create schema public;');
         schemaDropped=true;
         try { await state.db.close(); } catch {}
+        state.initialized=false;
         state.db=null;
         state.orm=null;
         state.runtime=null;
@@ -1754,6 +1801,21 @@
     } catch {}
     return { email: trimmed, passwordChangeRequired:!!user.password_change_required };
   }
+  async function openShowcase(){
+    if(typeof window.erpDataMode!=='function'||window.erpDataMode()!=='demo') throw new Error('Sample access is available only in the static Demo build.');
+    if(!state.initialized||state.mode!=='pglite'||!state.db) throw new Error('The local demo database is not ready.');
+    // Authenticate an existing, allowlisted fictional persona. Never create a
+    // user, change its rights, overwrite a Company or reset IndexedDB here.
+    var companies=await demoWorkspaceCompanies(state.db,'admin@acme.co');
+    if(!companies.includes('C-SG')) throw Object.assign(new Error('The sample account no longer has access to the sample Company.'),{code:'demo_sample_access_denied'});
+    await login('admin@acme.co');
+    SCOPE.companyFn='C-SG';
+    try{
+      localStorage.setItem('aria-active-company-fn','C-SG');
+      localStorage.setItem('aria-setup-wizard-complete','1');
+    }catch{}
+    await refresh();
+  }
   async function logout(){
     try {
       localStorage.removeItem('aria-demo-auth');
@@ -1761,6 +1823,7 @@
     } catch {}
   }
   async function switchUser(email){
+    requireDemoDb();
     var trimmed = String(email || '').trim().toLowerCase();
     if (!trimmed) return null;
     try { localStorage.setItem('aria-active-user-email', trimmed); } catch {}
@@ -1969,7 +2032,7 @@
     }
   }
   function requireDemoDb(){
-    if(!state.db) throw new Error('Demo database unavailable (offline fallback) — this operation needs PGlite.');
+    if(!state.initialized||state.mode!=='pglite'||!state.db) throw new Error('Demo database unavailable (offline fallback) — this operation needs PGlite.');
     return state.db;
   }
   function contractRow(row){
@@ -2759,6 +2822,21 @@
   async function actionInner(resource,id,name,payload){
     var key=normalizeResource(resource);
     requireEffectiveModuleForResource(key);
+    if(key==='hr/employees'&&name==='end-employment'){
+      var staffId=Number(id), staffActor=Number(state.activeUserId);
+      if(!await state.runtime.commands.hasPermissionWithin(state.orm,SCOPE,staffActor,'hr.write')) throw new Error('HR write permission is required.');
+      var endedEmployment=await requireDemoDb().transaction(function(tx){
+        return state.runtime.commands.endEmployeeEmploymentWithin(state.runtime.createOrm(tx),SCOPE,staffId,{
+          expectedUpdatedAt:payload&&payload.expectedUpdatedAt,
+          reason:payload&&payload.reason,
+          handoffEmployeeId:(payload&&payload.handoffEmployeeId)==null?null:Number(payload.handoffEmployeeId),
+          actorUserId:staffActor,
+          requestId:'demo-end-employment-'+(typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():Date.now()),
+        });
+      });
+      await refresh();
+      return {data:endedEmployment,meta:{}};
+    }
     if(key==='hr/employee-accounts'){
       var employeeId=Number(id), actorUserId=Number(state.activeUserId);
       if(!await state.runtime.commands.hasPermissionWithin(state.orm,SCOPE,actorUserId,'hr.write')) throw new Error('HR write permission is required.');
@@ -5236,6 +5314,7 @@
     isSignedIn: isSignedIn,
     login: login,
     logout: logout,
+    openShowcase: openShowcase,
     switchUser: switchUser,
     auth: {
       needsSetup:needsSetup,
@@ -5244,9 +5323,28 @@
       logout:logout,
     },
     get demoOneClickAvailable(){ return DEMO_ONE_CLICK_EMAILS.has(String(DB.user&&DB.user.email||'').toLowerCase()); },
+    get databaseReady(){ return state.initialized&&state.mode==='pglite'&&!!state.db; },
     get mode(){ return state.mode; },
     get db(){ return state.db; },
   };
+  adapter.organizationList=async function(kind){return {data:await requireDemoDb().transaction(function(tx){return state.runtime.commands.organizationList(state.runtime.createOrm(tx),SCOPE,Number(state.activeUserId),kind);}),meta:{}};};
+  adapter.organizationSave=async function(kind,input){var result=await requireDemoDb().transaction(function(tx){return state.runtime.commands.organizationSave(state.runtime.createOrm(tx),SCOPE,Number(state.activeUserId),kind,input);});await refresh();return {data:result,meta:{}};};
+  adapter.organizationAssign=async function(employeeId,input){var result=await requireDemoDb().transaction(function(tx){return state.runtime.commands.organizationAssign(state.runtime.createOrm(tx),SCOPE,Number(state.activeUserId),Object.assign({},input,{employeeId:Number(employeeId)}));});await refresh();return {data:result,meta:{}};};
+  async function scopedDemoHr(resource,permission,record){
+    if(resource!=='hr/employees'&&resource!=='hr/leave-requests')return null;
+    var ids=await requireDemoDb().transaction(function(tx){return state.runtime.commands.hrEmployeeAccessWithin(state.runtime.createOrm(tx),SCOPE,Number(state.activeUserId),resource,permission);});
+    if(record!=null&&ids!==null){
+      var employeeId=resource==='hr/employees'?Number(record):Number((await requireDemoDb().query('select employee_id from leave_request where master_fn=$1 and company_fn=$2 and id=$3',[SCOPE.masterFn,SCOPE.companyFn,Number(record)])).rows[0]?.employee_id);
+      if(!ids.includes(employeeId)){var error=new Error('Current staff scope does not include this record.');error.code='data_scope_denied';throw error;}
+    }
+    return ids;
+  }
+  var originalHrList=adapter.list,originalHrGet=adapter.get,originalHrUpdate=adapter.update,originalHrAction=adapter.action,originalHrCreate=adapter.create;
+  adapter.list=async function(resource,query){var key=normalizeResource(resource);var ids=await scopedDemoHr(key,'hr.read');var result=await originalHrList(resource,query);if(ids!==null)result.data=result.data.filter(function(row){return ids.includes(Number(key==='hr/employees'?row.id:row.employeeId));});return result;};
+  adapter.get=async function(resource,id){await scopedDemoHr(normalizeResource(resource),'hr.read',id);return originalHrGet(resource,id);};
+  adapter.update=async function(resource,id,payload,version){await scopedDemoHr(normalizeResource(resource),'hr.write',id);return originalHrUpdate(resource,id,payload,version);};
+  adapter.action=async function(resource,id,name,payload){await scopedDemoHr(normalizeResource(resource),'hr.write',id);return originalHrAction(resource,id,name,payload);};
+  adapter.create=async function(resource,payload){var ids=await scopedDemoHr(normalizeResource(resource),'hr.write');if(ids!==null)throw new Error('Company staff scope is required to create staff or company Leave.');return originalHrCreate(resource,payload);};
   window.ErpSystemData = adapter;
   window.ErpSystemDemo = adapter;
   window.ErpSystemDataReady = ready;
