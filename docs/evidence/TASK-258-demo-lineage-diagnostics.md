@@ -1,6 +1,7 @@
 # TASK-258: atomic Demo upgrades and safe visible diagnostics
 
-2026-10-02 follow-up on main `d29c29ba4d3dcd87718f5eb3e86bc59e5defe55d`.
+2026-10-02 integrated follow-up on main `ab1b7328f1be7472f36fde81b7fb2448f40ac2ce`.
+All three owner CompanyProfile commits and the subsequent trusted-device/Demo-workflow commit are preserved; no generated schema SQL is hand-edited.
 The owner supplied the safe Copy diagnostic from that build: `demo_schema_lineage_unknown`
 at `Checking database compatibility` / `VALIDATE DEMO SCHEMA LINEAGE`. The deployed
 gate rejects the owner's retained metadata; the exact structural difference and
@@ -15,8 +16,9 @@ of the stored migration marker. The prior source independently skipped the HR
 organization migration when a synthetic canonical117 schema carried bare marker118.
 A full current-source memory-PGlite startup nevertheless reached17modules without
 the HR objects. That defect alone does not reproduce the owner startup error.
-The historical CompanyProfile branch was not remotely available; its identity or
-repair is not inferred from the synthetic fixture.
+The historical CompanyProfile branch was unavailable during the initial2b
+diagnosis. It became reachable through the owner’s main merge and was then
+verified directly; its source identity is still not owner-storage attribution.
 
 ## Evidence-backed early-v73 normalization follow-up
 
@@ -42,17 +44,46 @@ No raw object names, definitions, private literals or business records are expor
 This is evidence to distinguish retained shapes, not proof that the owner's shape
 is the early-v73 preview. A successful isolated fixture is not owner acceptance.
 
+## Recovered historical Profile source and current119 integration
+
+Actual historical commit `4f9234d05d9983bd416f74ab4bdee6f95b64e8bd` contains
+`0118_lucky_randall.sql`. It is byte-identical to current `0119_company_profile.sql`,
+SHA256 `75222ed3d3930d0dd0bd40d9ccbd49a53a6a070385e51a078b13c70fb510ad49`.
+All0–117 tags/SQL bytes match. Disposable PGlite reconstruction yields complete
+historical metadata hash `b1dbebe5d902670c840af6c215762a7bee150bb39ff32469831e24cfd9096a76`.
+
+The d29 reader excluded the unowned Profile extension, recognized exact117 and
+repaired HR to118 while retaining fictional Profile values/version7/FK. Thus the
+historical table alone cannot explain the owner's d29 unknown gate. That observed
+source path leaves full119 metadata with marker/recordedHR118. Pristine current
+5c126c2 rejects both this shape and untouched historical117+Profile118 because it
+now owns Profile. Both upgrade gaps are independently source/reproduction backed.
+
+The integrated follow-up binds verified base117 metadata and Profile SQL digest,
+recognizes only these exact complete contracts at marker118, and atomically applies
+HR118 when absent plus canonical idempotentProfile119. It verifies full119 metadata
+and HR indexes before marker/identity commit. Negative defaults/FKs/extra columns,
+partial HR, future/wrong markers, contradictory/old-tag identities remain unchanged
+and rejected. Interruption after HR, marker or119 identity restores all metadata,
+Profile values/version/FK, company/staff/roles and revoked membership; retries pass.
+Native tests retain the valued Profile fixture across both historical paths and
+failure, and keep the bare117 regression in a separate blank disposable context.
+
+These are known source lineages, not a claim that either is the owner's shape.
+No migration/diagnostic requires owner rows or a storage reset.
+
 ## Candidate contract
 
-- Canonical schema prefixes are generated from the ordered Drizzle journal with
+- All120 canonical schema prefixes are generated from the ordered Drizzle journal with
   tag/SQL hash and structural identity. Metadata includes complete column types
   (precision/length), collation/nullability/default/identity, constraints,
   non-startup indexes, identity sequence options, governed triggers/enabled state
   and their canonical function definitions. Sequence values and ERP rows are not
   part of the fingerprint. The28 separately validated startup arbiters retain
   their existing bounded missing-index repair contract.
-- Only exact canonical117 metadata mis-marked118 can take the embedded bounded
-  HR compatibility repair. Partial, future or mismatched metadata/recorded
+- Exact canonical117 mis-marked118 and the explicitly evidenced historical
+  CompanyProfile source contracts above have bounded compatibility paths. Partial,
+  future or mismatched metadata/recorded
   identity fails closed. Extra unrelated tables/functions remain preserved;
   changes to canonical objects are not silently accepted. HR index name collisions
   in preserved extensions are rejected. Both HR masters, employee organization
@@ -121,3 +152,31 @@ or physical-device certification.
 
 Production PostgreSQL journals, grants, credentials, routes and UAT remain separate
 and untouched. There is no owner-error-fix or production-readiness claim.
+
+## Superseded-base evidence
+
+Original repair candidate6cfcb77/publisheda35c645 on d29 passed50 focused tests,
+clean builds/static/PGlite proofs and the full local aggregate (1097 pass,6skip,0fail).
+Its Draft PR17 became conflicted after the owner’s three current-main commits.
+That evidence is historical and does not certify the current119 integration. The
+replacement candidate requires new exact source review/local/native/CI gates.
+
+## Current-main integration checkpoint — 2026-10-02
+
+Repair source `be4be9b` is integrated onto owner main `ab1b732`; independent review
+confirmed the repair implementation and regression contracts match reviewed
+`260ce01`, with the newer owner auth/Demo/CompanyProfile changes preserved.
+The exact source passed 66 focused tests, lint, root/web typechecks, generated
+schema/index/lineage/drift and documentation checks, API/Demo builds, the PGlite
+transaction proof, and four actual classic-adapter memory-PGlite boot proofs
+(fresh, bare retained117/118, historical Profile118, advanced Profile119).
+These source proofs do not establish the owner's actual retained schema.
+
+Main CI [37006162345](https://github.com/yapweijun1996/ERP-System/actions/runs/37006162345)
+separately exposed a stale setup-wizard E2E selector: Company facts now render in
+`.system-settings-facts`, while the assertion waited for obsolete `.docmeta`.
+Only that selector is corrected; all Company-fact, policy-save and reload checks
+remain. This is test drift, not evidence for the owner's stored-data failure.
+The corrected browser scenario and complete current-head aggregate still require
+hosted execution; local Chromium remains blocked by Unix-socket `EPERM` even with
+approved escalation. Keep PR17 Draft pending exact-head CI/native acceptance.
