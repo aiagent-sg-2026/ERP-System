@@ -55,10 +55,11 @@ and the [focused MVP tracker](PROGRESS.md).
 TASK-258 original repair/diagnostics merged as PR15 at main d29c29b; full main
 hosted CI and six Chromium/WebKit Demo suites passed, and the public revision was
 verified. The owner now supplied unknown-lineage gate rejection; exact retained
-metadata mismatch remains unconfirmed. A follow-up candidate recognizes
-only the exact untracked early-v73 obsolete role index after full canonical hash
-validation, preserves same-name extension indexes, and exposes metadata-only
-hashes/counts for unknown failures. New exact-head review/browser/CI and owner
+metadata mismatch remains unconfirmed. The current-main119 integration recognizes
+only fully verified canonical/early-v73/historicalCompanyProfile contracts,
+preserves Profile values/version/FK and same-name extension indexes, and exposes
+metadata-only hashes/counts for unknown failures. Historical4f source is now
+verified; its identification still does not establish owner lineage. New exact-head review/browser/CI and owner
 acceptance are pending. Pages publication remains independent of CI; production
 PG/UAT stays separate. See the [verification boundary](evidence/TASK-258-demo-lineage-diagnostics.md).
 

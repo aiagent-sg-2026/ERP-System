@@ -597,6 +597,19 @@ identity, changed/constraint-backed index or any additional owned-object drift
 does not receive this normalization. A same-name index on an unrelated extension
 is preserved; the late adapter no longer drops an index merely by global name.
 
+Historical CompanyProfile source `4f9234d05d9983bd416f74ab4bdee6f95b64e8bd`
+is now present in main history. Its0–117 migration bytes match current canonical
+source and historical0118 matches current0119 exactly. Generated compatibility
+binds the source SQL digest and complete base117 contract, then recognizes only
+exact historical117+Profile118 metadata with no recorded identity, or exact
+canonical119 metadata with marker118 and no identity/canonicalHR118 identity.
+The latter is the verified d29 path that treated Profile as an unrelated extension.
+Missing HR118 DDL (only when required), idempotent canonicalProfile119 DDL, marker
+and identities commit atomically after full119/HR-index validation. Profile values,
+version and FK plus tenant/staff/revoked authority remain unchanged. Other markers,
+contradictory identities and near-matching/partial/default/FK/owned-object drift
+remain fail closed. None of these source shapes identifies the owner's actual DB.
+
 Source entry points: `src/demo/migrationIdentity.ts`, `schemaLineage.ts`, the
 generated `schemaLineage.generated.ts`, and `scripts/generate-demo-schema-lineage.ts`;
 `web/public/assets/erp-system-data-adapter.js` orchestrates the classic adapter
