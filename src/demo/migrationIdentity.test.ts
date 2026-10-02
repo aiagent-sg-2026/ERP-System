@@ -46,6 +46,68 @@ function orderedRunner() {
 }
 
 describe('identity-aware bounded retained Demo compatibility',()=>{
+  it.each([['current118',118,true],['genuine117',117,false],['bare118 actual117',118,false]] as const)('normalizes only the exact untracked obsolete role index for %s and preserves records/authority',async(_name,version,current)=>{
+    const db=await fixture(version,current);
+    try{
+      await db.exec(DEMO_SCHEMA_LINEAGE.legacyRoleRepair.index.definition);
+      const before=await preserved(db);
+      await upgradeDemoSchema(db,orderedRunner());
+      expect(await preserved(db)).toEqual(before);
+      expect(await structure(db)).toBe(DEMO_SCHEMA_LINEAGE.identities.at(-1)!.structuralHash);
+      expect((await db.query("select indexname from pg_indexes where schemaname='public' and indexname='uq_role_master_name'")).rows).toEqual([]);
+      expect((await db.query('select version,tag from "_erp_demo_schema_identity"')).rows).toEqual([{version:118,tag:'0118_classy_ronan'}]);
+      await upgradeDemoSchema(db,orderedRunner());
+      expect(await preserved(db)).toEqual(before);
+    }finally{await db.close();}
+  });
+  it.each(['nonunique','different columns','partial predicate','constraint-backed','extra owned drift','tracked identity'])('rejects %s obsolete-name variation without changing data or structure',async scenario=>{
+    const db=await fixture(118,true);
+    try{
+      const sql:Record<string,string>={
+        nonunique:'create index uq_role_master_name on role(master_fn,name)',
+        'different columns':'create unique index uq_role_master_name on role(master_fn,role_id)',
+        'partial predicate':'create unique index uq_role_master_name on role(master_fn,name) where is_superadmin=false',
+        'constraint-backed':'alter table role add constraint uq_role_master_name unique(master_fn,name)',
+        'extra owned drift':DEMO_SCHEMA_LINEAGE.legacyRoleRepair.index.definition+';alter table employee add column unknown_retained_value text',
+        'tracked identity':DEMO_SCHEMA_LINEAGE.legacyRoleRepair.index.definition,
+      };
+      if(scenario==='tracked identity')await ensureDemoMigrationIdentity(db);
+      await db.exec(sql[scenario]);
+      const before=await preserved(db),metadataBefore=await structure(db);
+      const identityBefore=await identityTable(db);
+      await expect(upgradeDemoSchema(db,orderedRunner())).rejects.toMatchObject({code:'demo_schema_lineage_unknown'});
+      expect(await preserved(db)).toEqual(before);
+      expect(await structure(db)).toBe(metadataBefore);
+      expect(await identityTable(db)).toBe(identityBefore);
+    }finally{await db.close();}
+  });
+  it('preserves an unrelated extension index with the obsolete name through the actual late runner',async()=>{
+    const db=await fixture(118,true);
+    try{
+      await db.exec('create unique index uq_role_master_name on retained_custom_note(id)');
+      const before=await preserved(db);
+      await upgradeDemoSchema(db,orderedRunner());
+      expect(await preserved(db)).toEqual(before);
+      expect((await db.query("select indexdef from pg_indexes where schemaname='public' and indexname='uq_role_master_name'")).rows).toEqual([{indexdef:'CREATE UNIQUE INDEX uq_role_master_name ON public.retained_custom_note USING btree (id)'}]);
+    }finally{await db.close();}
+  });
+  it.each([true,false])('rolls back obsolete-index normalization and identity/HR changes on interrupted %s initialization',async current=>{
+    const db=await fixture(118,current);
+    try{
+      await db.exec(DEMO_SCHEMA_LINEAGE.legacyRoleRepair.index.definition);
+      const before=await preserved(db),metadataBefore=await structure(db);
+      const interrupted={transaction:async(callback:(tx:Transaction)=>Promise<unknown>)=>db.transaction(async tx=>callback(new Proxy(tx,{get(target,key){
+        if(key==='query')return async(sql:string,parameters?:unknown[])=>{if(sql.startsWith('insert into "_erp_demo_schema_identity"'))throw new Error('fictional interruption after normalization');return target.query(sql,parameters);};
+        const value=Reflect.get(target,key);return typeof value==='function'?value.bind(target):value;
+      }})))} as unknown as PGlite;
+      await expect(ensureDemoMigrationIdentity(interrupted)).rejects.toThrow('fictional interruption after normalization');
+      expect(await preserved(db)).toEqual(before);
+      expect(await structure(db)).toBe(metadataBefore);
+      expect(await identityTable(db)).toBe(0);
+      await upgradeDemoSchema(db,orderedRunner());
+      expect(await preserved(db)).toEqual(before);
+    }finally{await db.close();}
+  });
   it('recognizes exact117 mis-marked118, repairs only HR schema and preserves tenant data/revoked authority/extensions',async()=>{
     const db=await fixture();
     try{
@@ -92,6 +154,22 @@ describe('identity-aware bounded retained Demo compatibility',()=>{
       if(scenario==='partial HR schema')await db.exec('create table hr_business_unit(id integer primary key)');
       const before=await preserved(db),metadataBefore=await structure(db);
       await expect(ensureDemoMigrationIdentity(db)).rejects.toMatchObject({code:'demo_schema_lineage_unknown',demoBootStatement:'VALIDATE DEMO SCHEMA LINEAGE',message:'demo_schema_lineage_unknown'});
+      expect(await preserved(db)).toEqual(before);
+      expect(await structure(db)).toBe(metadataBefore);
+      expect(await identityTable(db)).toBe(0);
+    }finally{await db.close();}
+  });
+  it('reports only schema digests and category counts when rejecting private-literal structural drift',async()=>{
+    const db=await fixture(118,true);
+    try{
+      await db.exec("alter table employee add column unknown_retained_value text default 'fictional private sentinel'");
+      const before=await preserved(db),metadataBefore=await structure(db);
+      const error=await ensureDemoMigrationIdentity(db).catch(error=>error);
+      expect(error).toMatchObject({code:'demo_schema_lineage_unknown',demoBootLineage:{marker:118,structuralHash:metadataBefore,expectedStructuralHash:DEMO_SCHEMA_LINEAGE.identities.at(-1)!.structuralHash,matchedVersion:null}});
+      const evidence=error.demoBootLineage;
+      expect(evidence.categories).toHaveLength(7);
+      expect(evidence.categories.filter((item:{hash:string;expectedHash:string})=>item.hash!==item.expectedHash).map((item:{name:string})=>item.name)).toEqual(['columns']);
+      expect(JSON.stringify(evidence)).not.toMatch(/fictional|private|employee|unknown_retained_value|default/);
       expect(await preserved(db)).toEqual(before);
       expect(await structure(db)).toBe(metadataBefore);
       expect(await identityTable(db)).toBe(0);
