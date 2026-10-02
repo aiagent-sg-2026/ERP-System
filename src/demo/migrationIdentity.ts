@@ -99,7 +99,7 @@ async function normalizeLegacyRoleIndex(tx: Transaction,contract: DemoStructural
   const known=DEMO_SCHEMA_LINEAGE.legacyRoleRepair.index;
   const normalized={...contract,indexes:contract.indexes.filter(index=>index.name!==known.name)};
   const hash=await demoStructuralHash(normalized);
-  const collided=current===DEMO_SCHEMA_LINEAGE.hrRepair.toVersion&&hash===DEMO_SCHEMA_LINEAGE.identities.find(identity=>identity.version===DEMO_SCHEMA_LINEAGE.hrRepair.fromVersion)!.structuralHash;
+  const collided=current===DEMO_SCHEMA_LINEAGE.hrRepair.toVersion&&(hash===DEMO_SCHEMA_LINEAGE.identities.find(identity=>identity.version===DEMO_SCHEMA_LINEAGE.hrRepair.fromVersion)!.structuralHash||hash===DEMO_SCHEMA_LINEAGE.historicalCompanyProfile.structuralHash);
   if(hash!==expected.structuralHash&&!collided)return false;
   try {await tx.exec('drop index "public"."uq_role_master_name"');}
   catch {throw lineageError('demo_schema_repair_failed','REPAIR DEMO LEGACY ROLE INDEX');}
@@ -125,8 +125,16 @@ async function ensureDemoMigrationIdentityWithin(tx: Transaction,finalValidation
     const hrPrior=DEMO_SCHEMA_LINEAGE.identities.find(identity=>identity.version===DEMO_SCHEMA_LINEAGE.hrRepair.fromVersion)!;
     const hrTarget=DEMO_SCHEMA_LINEAGE.identities.find(identity=>identity.version===DEMO_SCHEMA_LINEAGE.hrRepair.toVersion)!;
     const collided=current===hrTarget.version&&structuralHash===hrPrior.structuralHash;
+    const profile=DEMO_SCHEMA_LINEAGE.historicalCompanyProfile;
+    const profileTarget=DEMO_SCHEMA_LINEAGE.identities.find(identity=>identity.version===profile.targetVersion)!;
+    const historicalProfile=current===profile.marker&&structuralHash===profile.structuralHash;
+    // d29 deliberately ignored an unrelated Profile extension while recognizing
+    // canonical HR118. Main119 now owns that exact historical table; its full
+    // canonical119 contract plus the old118 marker/identity is a known source path.
+    const advancedProfile=current===profile.marker&&structuralHash===profileTarget.structuralHash&&recorded.every(row=>Number(row.version)===hrTarget.version);
     if(recorded.some(row=>Number(row.version)>current))throw lineageError('demo_schema_lineage_mismatch','VALIDATE DEMO MIGRATION IDENTITY');
     if(collided&&recorded.some(row=>Number(row.version)>=hrTarget.version))throw lineageError('demo_schema_lineage_mismatch','VALIDATE DEMO MIGRATION IDENTITY');
+    if(historicalProfile&&recorded.length)throw lineageError('demo_schema_lineage_mismatch','VALIDATE DEMO MIGRATION IDENTITY');
     if(finalValidation){
       if(current!==latest.version||!actualIsLatest)throw await unknown();
       await validateHrIndexes(tx);
@@ -137,6 +145,27 @@ async function ensureDemoMigrationIdentityWithin(tx: Transaction,finalValidation
       await validateHrIndexes(tx);
       await recordIdentity(tx,latest);
       return {repaired:roleRepaired,version:current};
+    }
+    if(historicalProfile||advancedProfile){
+      // No owner rows are read or rewritten. Execute only the evidenced missing
+      // HR DDL and canonical idempotent Profile119 section, then validate before
+      // atomically advancing marker/identities. A failure restores everything.
+      try{
+        if(historicalProfile){
+          if((await hrIndexes(tx)).length)throw await unknown();
+          await tx.exec(DEMO_SCHEMA_LINEAGE.hrRepair.sql);
+        }
+        await tx.exec(profile.sql);
+      }catch(error){
+        if(error&&typeof error==='object'&&'code' in error&&error.code==='demo_schema_lineage_unknown')throw error;
+        throw lineageError('demo_schema_repair_failed','REPAIR DEMO HISTORICAL COMPANY PROFILE');
+      }
+      if(await demoStructuralHash(await readDemoStructuralContract(tx,DEMO_SCHEMA_LINEAGE.ownedTables,DEMO_SCHEMA_LINEAGE.ownedFunctions))!==profileTarget.structuralHash)throw lineageError('demo_schema_repair_failed','REPAIR DEMO HISTORICAL COMPANY PROFILE');
+      await validateHrIndexes(tx);
+      await tx.query('insert into "_erp_demo_migration"(version) values($1) on conflict(version) do nothing',[profile.targetVersion]);
+      await recordIdentity(tx,hrTarget);
+      await recordIdentity(tx,profileTarget);
+      return {repaired:true,version:profile.targetVersion};
     }
     if(collided){
       // Only the exact source-derived117 contract can repair a legacy bare118.
