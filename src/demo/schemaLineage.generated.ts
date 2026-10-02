@@ -4253,37 +4253,13 @@ export const DEMO_SCHEMA_LINEAGE = {
       "version": 118,
       "tag": "0118_classy_ronan",
       "sqlHash": "5f33b9217ce97f4f6274ac98b9967c8c3c1fd0c6db293eb8e12a2e1b5b0d5569",
-      "structuralHash": "bc98ba23c396e6a14d384c406083b8dc455895e64a781ce8922bf9c9ced2c902",
-      "categories": {
-        "tables": {
-          "hash": "cc8d402096eeb80a4afa5b90b25d015148e273584c9a5410b0185f9b63388776",
-          "count": 268
-        },
-        "columns": {
-          "hash": "4b7f7eb60f03943e7d9966ebdccc4ce92c82c6f3e2d4dfba28e95bcba543d916",
-          "count": 3677
-        },
-        "constraints": {
-          "hash": "d6ca22d4e93b533a4cc69fd2ea0a503573c938e142e4dc335a9ed3792560f026",
-          "count": 4776
-        },
-        "indexes": {
-          "hash": "8c8fc7b13faa2ab929b66dceb3b56b8cf1824cfb17552fd37c723e716a535aa7",
-          "count": 841
-        },
-        "sequences": {
-          "hash": "9e3e3c8de726732a4dfb741caf74f6569c120cadf461c8631fd472c42e4a63cc",
-          "count": 249
-        },
-        "triggers": {
-          "hash": "fc967c1fc3d0d62df9ad4a362eec603491702d5a4fa3d38f95a988c851882f55",
-          "count": 68
-        },
-        "functions": {
-          "hash": "d3b4f75ac34fc6b4b6c821d8778203536fef3de7b7560e2aabfb2ee3fc965b1d",
-          "count": 29
-        }
-      }
+      "structuralHash": "bc98ba23c396e6a14d384c406083b8dc455895e64a781ce8922bf9c9ced2c902"
+    },
+    {
+      "version": 119,
+      "tag": "0119_company_profile",
+      "sqlHash": "75222ed3d3930d0dd0bd40d9ccbd49a53a6a070385e51a078b13c70fb510ad49",
+      "structuralHash": "da5baa635e62ab7d23f1d256c0927186e09613e7ce5c58ce9cb2a976c9462550"
     }
   ],
   "ownedTables": [
@@ -4332,6 +4308,7 @@ export const DEMO_SCHEMA_LINEAGE = {
     "company_module",
     "company_onboarding",
     "company_policy",
+    "company_profile",
     "company_receipt",
     "company_receipt_pack",
     "company_receipt_pack_governance_event",
@@ -4588,8 +4565,8 @@ export const DEMO_SCHEMA_LINEAGE = {
     "prevent_tax_evidence_fact_change()"
   ],
   "assetHashes": {
-    "erp-system-schema.sql": "0aab7599f70de2fd71b3fa217c045dbad7f2a4b40136031346855610c1f5e5e7",
-    "erp-system-migrations.sql": "3505c0792f9ee984ae15b9a90881b447806849b5b04ba002be45d3a4ba1f0c22"
+    "erp-system-schema.sql": "e82d4b9fa613eb68774a23e36675a835f56af90b69b243ea73d3cfc263501520",
+    "erp-system-migrations.sql": "81accea19756edac97235f164c24f8947ebd782be810f0efa8580ec97ba41877"
   },
   "legacyRoleRepair": {
     "absentSinceVersion": 73,

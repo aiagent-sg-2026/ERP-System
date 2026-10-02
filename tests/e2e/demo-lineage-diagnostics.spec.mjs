@@ -68,18 +68,18 @@ try{
   // and legacy bare118 marker; never infer a real owner's lineage from this model.
   await page.evaluate(async checks=>{
     const db=ErpSystemData.db;
-    await db.exec('alter table employee drop column business_unit_id;alter table employee drop column position_id;alter table employee drop column organization_version;drop table hr_business_unit;drop table hr_position;drop table "_erp_demo_schema_identity";create unique index uq_role_master_name on role(master_fn,name);');
+    await db.exec('alter table employee drop column business_unit_id;alter table employee drop column position_id;alter table employee drop column organization_version;drop table hr_business_unit;drop table hr_position;drop table company_profile;drop table "_erp_demo_schema_identity";delete from "_erp_demo_migration" where version>118;insert into "_erp_demo_migration"(version) values(118) on conflict(version) do nothing;');
     for(const check of checks)await db.exec('alter table "'+check.table_name+'" drop constraint "'+check.name+'";alter table "'+check.table_name+'" add constraint "'+check.name+'" '+check.definition+';');
   },priorChecks);
   await page.reload({waitUntil:'domcontentloaded'});
   await ready();
   assert.deepEqual(await preservation(),before);
   const repaired=await page.evaluate(async()=>({
-    identities:(await ErpSystemData.db.query('select version,tag from "_erp_demo_schema_identity"')).rows,
+    identities:(await ErpSystemData.db.query('select version,tag from "_erp_demo_schema_identity" order by version')).rows,
     hrTables:(await ErpSystemData.db.query("select table_name from information_schema.tables where table_schema='public' and table_name in ('hr_business_unit','hr_position') order by table_name")).rows.map(row=>row.table_name),
     moduleCount:ErpSystemData.setupModuleCatalog().length,
   }));
-  assert.deepEqual(repaired.identities,[{version:118,tag:'0118_classy_ronan'}]);
+  assert.deepEqual(repaired.identities,[{version:118,tag:'0118_classy_ronan'},{version:119,tag:'0119_company_profile'}]);
   assert.deepEqual(repaired.hrTables,['hr_business_unit','hr_position']);
   assert(repaired.moduleCount>0);
   const denied=await page.evaluate(async()=>{try{await ErpSystemData.openShowcase();return false;}catch{return localStorage.getItem('aria-demo-auth')===null;}});

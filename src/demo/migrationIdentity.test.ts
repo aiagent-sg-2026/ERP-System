@@ -7,6 +7,8 @@ import { DEMO_SCHEMA_LINEAGE } from './schemaLineage.generated';
 import { demoStructuralHash, readDemoStructuralContract } from './schemaLineage';
 
 const schema=readFileSync('web/public/db/erp-system-schema.sql','utf8');
+const latestIdentity=DEMO_SCHEMA_LINEAGE.identities.at(-1)!;
+const hrIdentity=DEMO_SCHEMA_LINEAGE.identities.find(identity=>identity.version===118)!;
 const priorSchema=schema.slice(0,schema.indexOf('-- 0118_classy_ronan'));
 async function fixture(version=118,current=false) {
   const db=new PGlite();
@@ -40,7 +42,7 @@ function orderedRunner() {
   const adapter=readFileSync('web/public/assets/erp-system-data-adapter.js','utf8');
   const start=adapter.indexOf('  async function ensureSchemaUpToDate(db){');
   const end=adapter.indexOf('\n  async function ensureWarehousePickFixture',start);
-  const context=vm.createContext({DEMO_SCHEMA_VERSION:118,console:{info:()=>{}},state:{runtime:{assertDemoSchemaAsset}},fetchSql:async()=>readFileSync('web/public/db/erp-system-migrations.sql','utf8'),execBootStatement:async(tx:Transaction,_label:string,sql:string)=>tx.exec(sql)});
+  const context=vm.createContext({DEMO_SCHEMA_VERSION:latestIdentity.version,console:{info:()=>{}},state:{runtime:{assertDemoSchemaAsset}},fetchSql:async()=>readFileSync('web/public/db/erp-system-migrations.sql','utf8'),execBootStatement:async(tx:Transaction,_label:string,sql:string)=>tx.exec(sql)});
   vm.runInContext(adapter.slice(start,end)+'\n globalThis.upgrade=ensureSchemaUpToDate;',context);
   return context.upgrade as (tx:Transaction)=>Promise<unknown>;
 }
@@ -115,30 +117,29 @@ describe('identity-aware bounded retained Demo compatibility',()=>{
       expect(await ensureDemoMigrationIdentity(db)).toEqual({repaired:true,version:118});
       expect(await preserved(db)).toEqual(before);
       const identity=(await db.query('select version,tag,sql_hash from "_erp_demo_schema_identity"')).rows;
-      const latest=DEMO_SCHEMA_LINEAGE.identities.at(-1)!;
+      const latest=hrIdentity;
       expect(identity).toEqual([{version:118,tag:latest.tag,sql_hash:latest.sqlHash}]);
       expect(await structure(db)).toBe(latest.structuralHash);
       expect((await db.query('select organization_version,business_unit_id,position_id from employee')).rows).toEqual([{organization_version:0,business_unit_id:null,position_id:null}]);
       expect(await ensureDemoMigrationIdentity(db)).toEqual({repaired:false,version:118});
-      expect(await ensureDemoMigrationIdentity(db,true)).toEqual({repaired:false,version:118});
+      await upgradeDemoSchema(db,orderedRunner());
+      expect(await ensureDemoMigrationIdentity(db,true)).toEqual({repaired:false,version:latestIdentity.version});
       expect(await preserved(db)).toEqual(before);
     }finally{await db.close();}
   });
-  it('lets a genuine117 use ordered118 compatibility and records identity only after complete validation',async()=>{
+  it('lets a genuine117 use ordered compatibility through the latest migration and records identity only after complete validation',async()=>{
     const db=await fixture(117);
     try{
       const before=await preserved(db);
       expect(await ensureDemoMigrationIdentity(db)).toEqual({repaired:false,version:117});
       expect(await identityTable(db)).toBe(0);
-      await db.exec(DEMO_SCHEMA_LINEAGE.hrRepair.sql);
-      await db.exec('insert into "_erp_demo_migration"(version) values(118)');
-      await ensureDemoMigrationIdentity(db,true);
+      await upgradeDemoSchema(db,orderedRunner());
       expect(await preserved(db)).toEqual(before);
       expect(await identityTable(db)).toBe(1);
     }finally{await db.close();}
   });
-  it('adopts healthy untracked118 once without changing any tenant records',async()=>{
-    const db=await fixture(118,true);
+  it('adopts the healthy untracked latest schema once without changing any tenant records',async()=>{
+    const db=await fixture(latestIdentity.version,true);
     try{
       const before=await preserved(db);
       await ensureDemoMigrationIdentity(db);
@@ -148,7 +149,7 @@ describe('identity-aware bounded retained Demo compatibility',()=>{
     }finally{await db.close();}
   });
   it.each(['future marker','unknown canonical column','partial HR schema'])('rejects %s before DDL/identity writes and preserves records',async scenario=>{
-    const db=await fixture(scenario==='future marker'?119:118);
+    const db=await fixture(scenario==='future marker'?latestIdentity.version+1:118);
     try{
       if(scenario==='unknown canonical column')await db.exec("alter table employee add column unknown_retained_value text default 'fictional private sentinel'");
       if(scenario==='partial HR schema')await db.exec('create table hr_business_unit(id integer primary key)');
@@ -178,7 +179,7 @@ describe('identity-aware bounded retained Demo compatibility',()=>{
   it.each(['wrong tag/hash','identity claims118 over actual117'])('rejects %s without rewriting markers or identity records',async scenario=>{
     const db=await fixture();
     try{
-      const latest=DEMO_SCHEMA_LINEAGE.identities.at(-1)!;
+      const latest=hrIdentity;
       await db.exec('create table "_erp_demo_schema_identity"(version integer primary key,tag text not null,sql_hash text not null,applied_at timestamptz not null default now())');
       await db.query('insert into "_erp_demo_schema_identity"(version,tag,sql_hash) values(118,$1,$2)',scenario==='wrong tag/hash'?['fictional private tag','fictional private hash']:[latest.tag,latest.sqlHash]);
       const before=await preserved(db),metadataBefore=await structure(db);
@@ -221,7 +222,7 @@ describe('identity-aware bounded retained Demo compatibility',()=>{
       expect((await db.query('select max(version)::int as version from "_erp_demo_migration"')).rows).toEqual([{version:117}]);
       await upgradeDemoSchema(db,upgrade);
       expect(await preserved(db)).toEqual(before);
-      expect((await db.query('select version,tag from "_erp_demo_schema_identity"')).rows).toEqual([{version:118,tag:'0118_classy_ronan'}]);
+      expect((await db.query('select version,tag from "_erp_demo_schema_identity"')).rows).toEqual([{version:latestIdentity.version,tag:latestIdentity.tag}]);
     }finally{await db.close();}
   });
   it.each(['monetary precision','disabled append-only trigger','changed trigger function','identity sequence options','non-startup index','HR index name collision'])('rejects material %s drift without schema/data repair',async scenario=>{
@@ -251,7 +252,7 @@ describe('identity-aware bounded retained Demo compatibility',()=>{
   it('rejects future/partial unseeded storage before bootstrap writes and atomically rolls back failed fresh initialization',async()=>{
     const future=new PGlite();
     try{
-      await future.exec('create table "_erp_demo_migration"(version integer primary key);insert into "_erp_demo_migration" values(119);create table retained_custom_note(note text);insert into retained_custom_note values(\'fictional retained extension\')');
+      await future.exec(`create table "_erp_demo_migration"(version integer primary key);insert into "_erp_demo_migration" values(${latestIdentity.version+1});create table retained_custom_note(note text);insert into retained_custom_note values('fictional retained extension')`);
       const before=await readDemoStructuralContract(future);
       await expect(preflightDemoBootstrap(future)).rejects.toMatchObject({code:'demo_schema_lineage_unknown'});
       await expect(initializeDemoDatabase(future,tx=>tx.exec(schema))).rejects.toMatchObject({code:'demo_schema_lineage_unknown'});
@@ -262,7 +263,7 @@ describe('identity-aware bounded retained Demo compatibility',()=>{
     try{
       await expect(initializeDemoDatabase(blank,async tx=>{await tx.exec(schema);throw new Error('fictional seed interruption');})).rejects.toThrow('fictional seed interruption');
       expect((await blank.query("select tablename from pg_tables where schemaname='public'")).rows).toEqual([]);
-      await initializeDemoDatabase(blank,async tx=>{await tx.exec(schema);await tx.exec('create table "_erp_demo_migration"(version integer primary key);insert into "_erp_demo_migration" values(118)');});
+      await initializeDemoDatabase(blank,async tx=>{await tx.exec(schema);await tx.exec('create table "_erp_demo_migration"(version integer primary key);insert into "_erp_demo_migration" values('+latestIdentity.version+')');});
       expect(await identityTable(blank)).toBe(1);
     }finally{await blank.close();}
   });
