@@ -180,3 +180,26 @@ remain. This is test drift, not evidence for the owner's stored-data failure.
 The corrected browser scenario and complete current-head aggregate still require
 hosted execution; local Chromium remains blocked by Unix-socket `EPERM` even with
 approved escalation. Keep PR17 Draft pending exact-head CI/native acceptance.
+
+### Mounted Company Profile regression follow-up
+
+Exact published tree `887e94f01766a558bff21e9c54ec54c6f9bd6385` (PR17
+`eb325a2`, local `d40e411`) passed all four hosted unit shards, PostgreSQL
+non-superuser security/cross-engine transaction checks, scoped HR/Staff/Leave,
+and all three Chromium Demo startup/retained/lineage suites in CI246.
+The five wizard viewport flows passed, but the post-setup settings assertion
+still timed out; WebKit and later audits were skipped after that failure.
+
+Source inspection and a lightweight execution of the real Company Profile mount
+explain the timeout: `mountCompanyProfilePanel` removes the first legacy facts
+panel and replaces it with `[data-company-profile] .cp-facts`. The regression now
+asserts that mounted panel, retaining all four Company-fact values and the policy
+save/reload contract. No application behavior or authorization is weakened. Native
+browser acceptance of this correction remains pending the next exact-head run.
+Failure artifacts and independently executing targeted/WebKit checks preserve
+failures while improving evidence; they do not turn a failed check into success.
+
+The full local Vitest aggregate for that same integrated application source later
+completed successfully: 1118 passed, 6 skipped, 0 failed (1124 total, exit0).
+The subsequent mounted-panel/CI-evidence correction changes no application source;
+its native browser verification remains separate from this aggregate result.
