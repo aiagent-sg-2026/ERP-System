@@ -561,6 +561,33 @@ reviewed receipt selection atomically, including newly matching rows. These are
 implementation requirements, not changes to the existing Pack command or domain
 contract. Existing key replay and current-visibility checks remain authoritative.
 
+## Static Demo startup identity and diagnostics — TASK-258 candidate
+
+The browser Demo transport validates canonical schema-prefix identities and
+source SQL hashes before migration, with a single transaction for ordered
+compatibility SQL, numeric marker and final identity. New schema/seed/examples
+are atomic too. A bare118 marker is not lineage proof: only exact source-derived
+canonical117 metadata can take the bounded HR organization DDL. Material type,
+constraint, index, sequence-option, append-only trigger/function or recorded
+identity drift fails closed without data/authority repair. The existing28 startup
+unique-arbiter validator remains separately responsible for its narrow additive
+ordinary-index contract. Additional unrelated tables/functions are preserved.
+
+Source entry points: `src/demo/migrationIdentity.ts`, `schemaLineage.ts`, the
+generated `schemaLineage.generated.ts`, and `scripts/generate-demo-schema-lineage.ts`;
+`web/public/assets/erp-system-data-adapter.js` orchestrates the classic adapter
+through `web/src/erp-demo-runtime-impl.ts`. `demo-startup-diagnostics.js` projects
+only safe source identifiers and readiness/build metadata. Failed wizard/login
+input and stored session/setup flags survive diagnosis; immediate/late failed
+signed-in startup is locked behind a diagnostic-only shell. No automatic reset,
+deduplication, record edit, grant activation or third-party diagnostic upload occurs.
+
+This is transport safety, not a Demo-only domain rule or production migration/RLS
+change. [Evidence and blockers](evidence/TASK-258-demo-lineage-diagnostics.md)
+separate synthetic source proof from owner root cause, browser certification,
+exact-head CI and production/UAT. No merge/release readiness is claimed.
+
+
 ## AI Native target and implementation boundary — 2026-09-09
 
 [GOAL.md](../GOAL.md) is the target/DoD owner for EPIC-068. TASK-227 delivers

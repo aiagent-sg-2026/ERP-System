@@ -33,11 +33,11 @@ function clearSetupWizardFlag(){
 
 function demoStartupCopy(languageOverride){
   var messages={
-    en:{entry:'Open the complete sample demo',denied:'The sample account no longer has access to the sample Company.',waiting:'Preparing the local demo database. Setup will become available when it is ready.',failed:'The local demo database could not open. Your existing data has not been reset. Reload to retry.',ready:'The sample demo uses fictional data stored only in this browser.'},
-    zh:{entry:'打开完整示例演示',denied:'示例账户已无权访问示例公司。',waiting:'正在准备本地演示数据库。准备完成后才能保存设置。',failed:'无法打开本地演示数据库。现有数据未被重置，请重新加载以重试。',ready:'示例演示使用虚构数据，仅存储于此浏览器。'},
-    ms:{entry:'Buka demo contoh lengkap',denied:'Akaun contoh tidak lagi mempunyai akses kepada syarikat contoh.',waiting:'Menyediakan pangkalan data demo setempat. Persediaan tersedia apabila ia sedia.',failed:'Pangkalan data demo setempat tidak dapat dibuka. Data sedia ada tidak ditetapkan semula. Muat semula untuk mencuba lagi.',ready:'Demo contoh menggunakan data rekaan yang disimpan dalam pelayar ini sahaja.'},
-    ja:{entry:'完全なサンプルデモを開く',denied:'サンプルアカウントはサンプル会社にアクセスできません。',waiting:'ローカルのデモデータベースを準備中です。準備完了後に設定を保存できます。',failed:'ローカルのデモデータベースを開けませんでした。既存のデータはリセットされていません。再読み込みして再試行してください。',ready:'サンプルデモの架空データは、このブラウザーにのみ保存されます。'},
-    vi:{entry:'Mở bản demo mẫu đầy đủ',denied:'Tài khoản mẫu không còn quyền truy cập công ty mẫu.',waiting:'Đang chuẩn bị cơ sở dữ liệu demo cục bộ. Có thể lưu thiết lập khi đã sẵn sàng.',failed:'Không thể mở cơ sở dữ liệu demo cục bộ. Dữ liệu hiện có chưa bị đặt lại. Hãy tải lại để thử lại.',ready:'Demo mẫu dùng dữ liệu giả định chỉ lưu trong trình duyệt này.'},
+    en:{entry:'Open the complete sample demo',denied:'The sample account no longer has access to the sample Company.',waiting:'Preparing the local demo database. Setup will become available when it is ready.',failed:'The local demo could not finish starting. Your existing data has not been reset. Reload to retry.',ready:'The sample demo uses fictional data stored only in this browser.'},
+    zh:{entry:'打开完整示例演示',denied:'示例账户已无权访问示例公司。',waiting:'正在准备本地演示数据库。准备完成后才能保存设置。',failed:'本地演示未能完成启动。现有数据未被重置，请重新加载以重试。',ready:'示例演示使用虚构数据，仅存储于此浏览器。'},
+    ms:{entry:'Buka demo contoh lengkap',denied:'Akaun contoh tidak lagi mempunyai akses kepada syarikat contoh.',waiting:'Menyediakan pangkalan data demo setempat. Persediaan tersedia apabila ia sedia.',failed:'Demo setempat tidak dapat selesai dimulakan. Data sedia ada tidak ditetapkan semula. Muat semula untuk mencuba lagi.',ready:'Demo contoh menggunakan data rekaan yang disimpan dalam pelayar ini sahaja.'},
+    ja:{entry:'完全なサンプルデモを開く',denied:'サンプルアカウントはサンプル会社にアクセスできません。',waiting:'ローカルのデモデータベースを準備中です。準備完了後に設定を保存できます。',failed:'ローカルデモの起動を完了できませんでした。既存のデータはリセットされていません。再読み込みして再試行してください。',ready:'サンプルデモの架空データは、このブラウザーにのみ保存されます。'},
+    vi:{entry:'Mở bản demo mẫu đầy đủ',denied:'Tài khoản mẫu không còn quyền truy cập công ty mẫu.',waiting:'Đang chuẩn bị cơ sở dữ liệu demo cục bộ. Có thể lưu thiết lập khi đã sẵn sàng.',failed:'Không thể hoàn tất khởi động demo cục bộ. Dữ liệu hiện có chưa bị đặt lại. Hãy tải lại để thử lại.',ready:'Demo mẫu dùng dữ liệu giả định chỉ lưu trong trình duyệt này.'},
   };
   i18nLegacy(messages);
   var language=languageOverride||(typeof getLang==='function'?getLang():'en');
@@ -45,6 +45,7 @@ function demoStartupCopy(languageOverride){
 }
 
 function updateDemoStartupControls(){
+  if(window.ErpDemoDiagnostics)window.ErpDemoDiagnostics.render();
   var ready=window.ErpSystemData&&window.ErpSystemData.databaseReady===true;
   var wizard=document.getElementById('setupWizardView');
   var language=wizard&&wizard.getAttribute('lang');
@@ -907,7 +908,7 @@ function renderSetupWizard(){
     var left = S.step>0 ? btn(s('back'),{icon:'chevL',cls:'soft',attrs:'id="wizBack"'}) : '';
     var demoCopy=demoStartupCopy(S.lang);
     var demoNotice=IS_API?'':'<div class="auth-help" role="status" id="demoStartupStatus">'+esc(demoReady?demoCopy.ready:window.__ERP_DEMO_PROGRESS__&&window.__ERP_DEMO_PROGRESS__.phase==='failed'?demoCopy.failed:demoCopy.waiting)+'</div><button type="button" class="btn soft" id="wizardShowcase" '+(demoReady?'':'disabled')+'>'+esc(demoCopy.entry)+'</button>';
-    return demoNotice+'<div class="set-savebar wizard-savebar">'+left+(S.step>0?'<div class="grow"></div>':'')+right+'</div>';
+    return demoNotice+(!IS_API?'<div data-demo-diagnostic hidden></div>':'')+'<div class="set-savebar wizard-savebar">'+left+(S.step>0?'<div class="grow"></div>':'')+right+'</div>';
   }
 
   function render(options){
@@ -921,6 +922,7 @@ function renderSetupWizard(){
       footer()+
       '</section>';
     wire();
+    if(window.ErpDemoDiagnostics)window.ErpDemoDiagnostics.render();
     // Keep the fixed wizard shell anchored while the inner step body scrolls.
     // Replacing the focused navigation button can otherwise preserve the old
     // outer scroll offset and hide the brand bar on compact viewports.

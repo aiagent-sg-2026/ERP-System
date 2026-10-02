@@ -169,16 +169,16 @@
   function fetchSql(name){
     var separator=name.indexOf('?')===-1?'?':'&';
     return fetch(DB_BASE + name + separator + 'v=' + DEMO_SCHEMA_VERSION).then(function(r){
-      if (!r.ok) throw new Error('fetch ' + name + ' -> HTTP ' + r.status);
+      if (!r.ok) throw Object.assign(new Error('Demo asset could not load.'),{code:'demo_asset_fetch_failed',demoBootStatement:name});
       return r.text();
-    });
+    }).catch(function(error){throw Object.assign(new Error('Demo asset could not load.'),{code:'demo_asset_fetch_failed',demoBootStatement:name,cause:error});});
   }
 
   function fetchJson(name){
     return fetch(DB_BASE + name + '?v=' + encodeURIComponent(DEMO_PACK_VERSION)).then(function(r){
-      if (!r.ok) throw new Error('fetch ' + name + ' -> HTTP ' + r.status);
+      if (!r.ok) throw Object.assign(new Error('Demo asset could not load.'),{code:'demo_asset_fetch_failed',demoBootStatement:name});
       return r.json();
-    });
+    }).catch(function(error){throw Object.assign(new Error('Demo asset could not load.'),{code:'demo_asset_fetch_failed',demoBootStatement:name,cause:error});});
   }
 
   async function execBootStatement(db, statement, sqlText){
@@ -197,7 +197,7 @@
   async function ensureShowcasePack(db, freshlySeeded){
     var manifest = await fetchJson('erp-system-showcase-v1.json');
     if(!manifest || manifest.version !== DEMO_PACK_VERSION || !manifest.sha256){
-      throw new Error('Demo showcase manifest is invalid.');
+      throw Object.assign(new Error('Demo showcase manifest is invalid.'),{code:'demo_manifest_invalid',demoBootStatement:'erp-system-showcase-v1.json'});
     }
     var current = await db.query("select value from system_state where key='demo_showcase_pack' limit 1");
     if(current.rows[0] && current.rows[0].value && current.rows[0].value.version === DEMO_PACK_VERSION){
@@ -212,7 +212,7 @@
     }
     var sqlText = await fetchSql('erp-system-showcase-v1.sql');
     var digest = await state.runtime.sha256Hex(sqlText);
-    if(digest !== manifest.sha256) throw new Error('Demo showcase pack integrity check failed.');
+    if(digest !== manifest.sha256) throw Object.assign(new Error('Demo showcase pack integrity check failed.'),{code:'demo_pack_integrity_failed',demoBootStatement:'erp-system-showcase-v1.sql'});
     var started = performance.now();
     await execBootStatement(db, 'erp-system-showcase-v1.sql', sqlText);
     state.demoPack = Object.assign({}, manifest, { loadMs: Math.round(performance.now()-started) });
@@ -235,19 +235,21 @@
     }
     if (!seeded) {
       var schema = await fetchSql('erp-system-schema.sql');
+      await state.runtime.assertDemoSchemaAsset('erp-system-schema.sql',schema);
       var txn = await fetchSql('erp-system-demo-txn.sql');
-      await execBootStatement(db, 'erp-system-schema.sql', schema);
-      try { await state.runtime.commands.seedDemo(state.orm); }
-      catch(error){if(error && typeof error==='object')error.demoBootStatement='canonical seedDemo';throw error;}
-      await execBootStatement(db, 'erp-system-demo-txn.sql', txn);
-      /* The flat schema already contains the complete ordered migration chain.
-         Mark it current immediately so a brand-new browser database never
-         replays legacy data migrations against today's constraints. */
-      await db.exec(
-        'create table if not exists "_erp_demo_migration" (' +
-        '"version" integer primary key, "applied_at" timestamptz not null default now());' +
-        'insert into "_erp_demo_migration" ("version") values (' + DEMO_SCHEMA_VERSION + ') ' +
-        'on conflict ("version") do nothing;');
+      await state.runtime.initializeDemoDatabase(db,async function(tx){
+        await execBootStatement(tx, 'erp-system-schema.sql', schema);
+        try { await state.runtime.commands.seedDemo(state.runtime.createOrm(tx)); }
+        catch(error){if(error && typeof error==='object')error.demoBootStatement='canonical seedDemo';throw error;}
+        await execBootStatement(tx, 'erp-system-demo-txn.sql', txn);
+        /* Schema, canonical seed, transaction examples and marker commit together.
+           An interrupted first visit cannot leave a partially seeded master. */
+        await tx.exec(
+          'create table if not exists "_erp_demo_migration" (' +
+          '"version" integer primary key, "applied_at" timestamptz not null default now());' +
+          'insert into "_erp_demo_migration" ("version") values (' + DEMO_SCHEMA_VERSION + ') ' +
+          'on conflict ("version") do nothing;');
+      });
     }
     return !seeded;
   }
@@ -378,6 +380,7 @@
     }
 
     var migrationSql = await fetchSql('erp-system-migrations.sql');
+    await state.runtime.assertDemoSchemaAsset('erp-system-migrations.sql',migrationSql);
     var headers = [];
     var headerPattern = /^-- (\d{4})_[^\n]+$/gm;
     var match;
@@ -1254,9 +1257,10 @@
     state.runtime = runtime;
     try {
       reportBootProgress(12,'Preparing base demo records','Creating the canonical sample schema when needed…','loading');
+      await runtime.preflightDemoBootstrap(db);
       var freshlySeeded = await ensureSeeded(db);
       reportBootProgress(28,'Checking database compatibility','Applying safe local schema migrations…','loading');
-      await ensureSchemaUpToDate(db);
+      await runtime.upgradeDemoSchema(db,ensureSchemaUpToDate);
       // Table/column presence and version markers do not prove ON CONFLICT arbiters exist.
       await runtime.ensureDemoUniqueIndexes(db);
       await ensureDemoDrafts(db);
@@ -1327,10 +1331,10 @@
       resolve();
     }).catch(function(e){
       clearTimeout(timer);
-      window.__ERP_DEMO_FAILURE__ = {code:e && e.code ? String(e.code) : 'demo_initialization_failed',stage:window.__ERP_DEMO_PROGRESS__ && window.__ERP_DEMO_PROGRESS__.title,statement:e && e.demoBootStatement ? String(e.demoBootStatement) : null};
-      console.warn('[erp-system] PGlite unavailable — using static fallback.', e && e.message ? String(e.message) : 'Demo initialization failed', window.__ERP_DEMO_FAILURE__);
+      window.__ERP_DEMO_FAILURE__ = window.ErpDemoDiagnostics?window.ErpDemoDiagnostics.failure(e,window.__ERP_DEMO_PROGRESS__ && window.__ERP_DEMO_PROGRESS__.title):{code:'demo_initialization_failed',stage:'Preparing local demo database',statement:null};
+      console.warn('[erp-system] PGlite unavailable — using static fallback.', window.__ERP_DEMO_FAILURE__);
       applyOnce(fallbackPayload(), 'fallback');
-      reportBootProgress(100,'Opening offline demo mode','The local database could not open. Existing data has not been reset.','failed');
+      reportBootProgress(100,'Opening offline demo mode','The local demo could not finish starting. Existing data has not been reset.','failed');
       resolve();
     });
   });

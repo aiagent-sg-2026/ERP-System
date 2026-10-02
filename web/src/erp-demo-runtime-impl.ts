@@ -1,3 +1,4 @@
+import { assertDemoSchemaAsset, ensureDemoMigrationIdentity, initializeDemoDatabase, preflightDemoBootstrap, upgradeDemoSchema } from '../../src/demo/migrationIdentity';
 import { ensureDemoUniqueIndexes } from '../../src/demo/schemaIntegrity';
 import { listOrganizationWithin, saveOrganizationWithin, assignEmployeeOrganizationWithin, OrganizationError, type OrganizationKind } from '../../src/modules/hr/organization';
 import { resolveHrEmployeeAccessWithin, assertHrEmploymentEndAccessWithin, assertHrCompanyAccessWithin } from '../../src/auth/hrDataAccess';
@@ -574,6 +575,11 @@ export const erpDemoRuntime = Object.freeze({
   createOrm,
   sha256Hex,
   ensureDemoUniqueIndexes,
+  ensureDemoMigrationIdentity,
+  assertDemoSchemaAsset,
+  preflightDemoBootstrap,
+  upgradeDemoSchema,
+  initializeDemoDatabase,
   setupModuleCatalog: Object.freeze(COMMERCIAL_MODULE_CATALOG.map((definition) => Object.freeze({
     ...definition,
     dependencies: Object.freeze([...definition.dependencies]),
