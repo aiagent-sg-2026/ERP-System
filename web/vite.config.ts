@@ -1,5 +1,6 @@
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { defineConfig, transformWithEsbuild, type ResolvedConfig } from 'vite';
 import { resolveViteBasePath } from '../scripts/public-base-path.mjs';
 
@@ -45,6 +46,16 @@ function minifyLegacyAssets(){
   };
 }
 
+function diagnosticBuildId(){
+  const configured=process.env.RELEASE_COMMIT||process.env.GITHUB_SHA;
+  if(configured&&/^[a-f0-9]{40}$/.test(configured))return configured;
+  try{
+    const commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+    const dirty=execFileSync('git',['status','--porcelain','--untracked-files=no'],{encoding:'utf8'}).trim();
+    return /^[a-f0-9]{40}$/.test(commit)?commit+(dirty?'-dirty':''):'development';
+  }catch{return 'development';}
+}
+
 const dataMode = process.env.VITE_DATA_MODE === 'api' ? 'api' : 'demo';
 
 export default defineConfig({
@@ -53,8 +64,9 @@ export default defineConfig({
     transformIndexHtml: {
       order: 'pre',
       handler(html) {
+        html=html.replaceAll('%ERP_BUILD_ID%',diagnosticBuildId());
         if (dataMode !== 'api') return html;
-        return html.replace(
+        return html.replace(/\s*<script src="(?:%BASE_URL%|\.\/)assets\/demo-startup-diagnostics\.js[^>]*><\/script>/,'').replace(
           /\s*<script type="module" src="\/src\/erp-demo-runtime\.ts"><\/script>/,
           '',
         ).replace(
