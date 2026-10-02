@@ -109,7 +109,7 @@ async function runModuleVisibilityAfterSetup(browser) {
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => document.querySelector('#palette')?.getAttribute('aria-hidden') === 'true', null, { timeout: TIMEOUT });
     await page.evaluate(() => navigate('sys-settings'));
-    const companyFacts = page.locator('[data-canonical-system-settings] .docmeta');
+    const companyFacts = page.locator('[data-canonical-system-settings] .system-settings-facts');
     await companyFacts.waitFor({ state: 'visible', timeout: TIMEOUT });
     const displayedFacts = await companyFacts.innerText();
     if (!['Acme Singapore', 'SG', 'SGD', 'GST'].every(fact => displayedFacts.includes(fact))) {
