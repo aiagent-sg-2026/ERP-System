@@ -112,6 +112,9 @@ jobs:
       - name: Check canonical Demo unique-index contract
         run: npm run check:demo-indexes
 
+      - name: Check canonical Demo schema lineage identities
+        run: npm run check:demo-lineage
+
       - name: Check schema drift (all Drizzle migrations vs generated PGlite schema)
         run: npm run check:drift
 
@@ -163,6 +166,9 @@ jobs:
       - name: Retained Demo schema repair and revoked sample membership (Chromium)
         run: node tests/e2e/demo-retained-schema.spec.mjs
 
+      - name: Identity-aware Demo upgrade and visible safe failure diagnostics (Chromium)
+        run: node tests/e2e/demo-lineage-diagnostics.spec.mjs
+
       - name: Full first-run wizard, sign-in and responsive layout (Chromium)
         run: node tests/e2e/setup-wizard-layout.spec.mjs
 
@@ -178,6 +184,11 @@ jobs:
         env:
           DEMO_STARTUP_ENGINE: webkit
         run: node tests/e2e/demo-retained-schema.spec.mjs
+
+      - name: Identity-aware Demo upgrade and visible safe failure diagnostics (WebKit)
+        env:
+          DEMO_STARTUP_ENGINE: webkit
+        run: node tests/e2e/demo-lineage-diagnostics.spec.mjs
 
       - name: i18n browser matrix (en/ms/zh/ja/vi × desktop/mobile)
         env:
