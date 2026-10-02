@@ -49,7 +49,7 @@ try{
   // and legacy bare118 marker; never infer a real owner's lineage from this model.
   await page.evaluate(async checks=>{
     const db=ErpSystemData.db;
-    await db.exec('alter table employee drop column business_unit_id;alter table employee drop column position_id;alter table employee drop column organization_version;drop table hr_business_unit;drop table hr_position;drop table company_profile;drop table "_erp_demo_schema_identity";delete from "_erp_demo_migration" where version>118;');
+    await db.exec('alter table employee drop column business_unit_id;alter table employee drop column position_id;alter table employee drop column organization_version;drop table hr_business_unit;drop table hr_position;drop table company_profile;drop table "_erp_demo_schema_identity";delete from "_erp_demo_migration" where version>118;insert into "_erp_demo_migration"(version) values(118) on conflict(version) do nothing;');
     for(const check of checks)await db.exec('alter table "'+check.table_name+'" drop constraint "'+check.name+'";alter table "'+check.table_name+'" add constraint "'+check.name+'" '+check.definition+';');
   },priorChecks);
   await page.reload({waitUntil:'domcontentloaded'});
