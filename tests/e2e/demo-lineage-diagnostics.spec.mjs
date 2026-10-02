@@ -30,6 +30,7 @@ async function ready(target=page){await target.waitForFunction(()=>window.ErpSys
 async function preservation(target=page){return target.evaluate(async()=>({
   company:(await ErpSystemData.db.query("select company_fn,name from company order by company_fn")).rows,
   staff:(await ErpSystemData.db.query('select id,employee_no,full_name,department,job_title from employee order by id')).rows,
+  roles:(await ErpSystemData.db.query('select role_id,master_fn,company_fn,name,is_superadmin from role order by role_id')).rows,
   authority:(await ErpSystemData.db.query('select assignment_id,user_id,company_fn,role_id,valid_from,valid_until,revoked_at from user_company_role order by assignment_id')).rows,
   sentinel:localStorage.getItem('lineage-preservation-sentinel'),
 }));}
@@ -40,16 +41,34 @@ try{
   assert.equal(await page.evaluate(()=>localStorage.getItem('aria-demo-auth')),null);
   await page.evaluate(async()=>{
     await ErpSystemData.db.query("update company set name=$1 where master_fn='M1' and company_fn='C-SG'",['Fictional retained lineage Company']);
+    // The modern sample has company-local duplicate role names. An old group-wide
+    // index could not have contained them; prepare unique fictional names before
+    // capturing the preservation baseline, without changing IDs/grants/authority.
+    await ErpSystemData.db.exec("update role set name=name||' fictional legacy fixture '||role_id");
     const owner=(await ErpSystemData.db.query("select user_id from app_user where lower(email)='admin@acme.co' and master_fn='M1'")).rows[0];
     await ErpSystemData.db.query("update user_company_role set revoked_at=current_timestamp where user_id=$1 and company_fn='C-SG'",[owner.user_id]);
     localStorage.setItem('lineage-preservation-sentinel','fictional retained sentinel');
   });
   const before=await preservation();
+  // Reproduce the evidenced early-v73 preview shape only in this disposable context.
+  await page.evaluate(async()=>ErpSystemData.db.exec('drop table "_erp_demo_schema_identity";create unique index uq_role_master_name on role(master_fn,name)'));
+  await page.reload({waitUntil:'domcontentloaded'});
+  await ready();
+  assert.deepEqual(await preservation(),before);
+  assert.deepEqual(await page.evaluate(async()=>(await ErpSystemData.db.query("select indexname from pg_indexes where schemaname='public' and indexname='uq_role_master_name'")).rows),[]);
+  // An unrelated extension's same-name index must survive the actual late runner.
+  await page.evaluate(async()=>ErpSystemData.db.exec("create table retained_extension(id int primary key,note text);insert into retained_extension values(1,'fictional extension preserved');create unique index uq_role_master_name on retained_extension(id)"));
+  await page.reload({waitUntil:'domcontentloaded'});
+  await ready();
+  assert.deepEqual(await preservation(),before);
+  assert.equal(await page.evaluate(async()=>(await ErpSystemData.db.query("select tablename from pg_indexes where schemaname='public' and indexname='uq_role_master_name'")).rows[0].tablename),'retained_extension');
+  // Remove this test-only index so the following legacy-role reconstruction can use its name.
+  await page.evaluate(async()=>ErpSystemData.db.exec('drop index uq_role_master_name'));
   // Only this disposable context is mutated to reconstruct the exact117 metadata
   // and legacy bare118 marker; never infer a real owner's lineage from this model.
   await page.evaluate(async checks=>{
     const db=ErpSystemData.db;
-    await db.exec('alter table employee drop column business_unit_id;alter table employee drop column position_id;alter table employee drop column organization_version;drop table hr_business_unit;drop table hr_position;drop table "_erp_demo_schema_identity";');
+    await db.exec('alter table employee drop column business_unit_id;alter table employee drop column position_id;alter table employee drop column organization_version;drop table hr_business_unit;drop table hr_position;drop table "_erp_demo_schema_identity";create unique index uq_role_master_name on role(master_fn,name);');
     for(const check of checks)await db.exec('alter table "'+check.table_name+'" drop constraint "'+check.name+'";alter table "'+check.table_name+'" add constraint "'+check.name+'" '+check.definition+';');
   },priorChecks);
   await page.reload({waitUntil:'domcontentloaded'});
@@ -83,10 +102,17 @@ try{
   await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.copiedDiagnostic=text;}}}));
   await panel.getByRole('button',{name:'Copy diagnostic',exact:true}).click();
   const diagnostic=await page.evaluate(()=>JSON.parse(window.copiedDiagnostic));
-  assert.deepEqual(Object.keys(diagnostic).sort(),['buildId','code','mode','phase','ready','stage','statement']);
+  assert.deepEqual(Object.keys(diagnostic).sort(),['buildId','code','lineage','mode','phase','ready','stage','statement']);
   assert.equal(diagnostic.code,'demo_schema_lineage_unknown');
   assert.equal(diagnostic.mode,'fallback');
   assert.equal(diagnostic.ready,false);
+  assert.equal(diagnostic.lineage.marker,118);
+  assert.equal(diagnostic.lineage.identityCount,1);
+  assert.equal(diagnostic.lineage.legacyRoleIndex,'absent');
+  assert.equal(diagnostic.lineage.matchedVersion,null);
+  assert.equal(diagnostic.lineage.normalizedMatchedVersion,null);
+  assert.match(diagnostic.lineage.structuralHash,/^[a-f0-9]{64}$/);
+  assert.deepEqual(diagnostic.lineage.categories.filter(item=>item.hash!==item.expectedHash).map(item=>item.name),['columns']);
   assert(!JSON.stringify(diagnostic).includes('fictional'));
   assert(!JSON.stringify(diagnostic).includes('unknown_retained_value'));
   await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('fictional clipboard unavailable');}}}));
@@ -94,6 +120,7 @@ try{
   assert.match(await panel.innerText(),/Could not copy/);
   await panel.locator('summary').click();
   assert.equal(await panel.locator('pre').isVisible(),true);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);
   for(const [language,label] of Object.entries({en:'Copy diagnostic',zh:'复制诊断',ms:'Salin diagnostik',ja:'診断をコピー',vi:'Sao chép chẩn đoán'})){
     await page.locator('#wizTopLang').selectOption(language);
     assert.equal(await panel.getByRole('button',{name:label,exact:true}).isVisible(),true);
@@ -108,7 +135,7 @@ try{
   assert.equal(await page.evaluate(()=>localStorage.getItem('lineage-preservation-sentinel')),'fictional retained sentinel');
   const retainedAfterFailure=await page.evaluate(async()=>{
     const opened=ErpDemoRuntime.openDatabase('idb://erp-system-demo');
-    try{return {company:(await opened.client.query('select company_fn,name from company order by company_fn')).rows,staff:(await opened.client.query('select id,employee_no,full_name,department,job_title from employee order by id')).rows,authority:(await opened.client.query('select assignment_id,user_id,company_fn,role_id,valid_from,valid_until,revoked_at from user_company_role order by assignment_id')).rows,sentinel:localStorage.getItem('lineage-preservation-sentinel'),unknown:(await opened.client.query('select unknown_retained_value from employee limit 1')).rows[0].unknown_retained_value};}
+    try{return {company:(await opened.client.query('select company_fn,name from company order by company_fn')).rows,staff:(await opened.client.query('select id,employee_no,full_name,department,job_title from employee order by id')).rows,roles:(await opened.client.query('select role_id,master_fn,company_fn,name,is_superadmin from role order by role_id')).rows,authority:(await opened.client.query('select assignment_id,user_id,company_fn,role_id,valid_from,valid_until,revoked_at from user_company_role order by assignment_id')).rows,sentinel:localStorage.getItem('lineage-preservation-sentinel'),unknown:(await opened.client.query('select unknown_retained_value from employee limit 1')).rows[0].unknown_retained_value};}
     finally{await opened.client.close();}
   });
   assert.equal(retainedAfterFailure.unknown,'fictional private record sentinel');
@@ -132,6 +159,6 @@ try{
     assert.deepEqual(signedErrors,[]);
     await signed.close();
   }
-  console.log(JSON.stringify({ok:true,engine:engine===webkit?'webkit':'chromium',realFreshEntry:true,syntheticKnown117To118Repair:true,repeatedReload:true,recordsAndRevokedAuthorityPreserved:true,unknownLineageFailedClosed:true,visibleSafeDiagnostic:diagnostic,fiveLanguages:true,mobileWidth:375,ownerRootCauseConfirmed:false}));
+  console.log(JSON.stringify({ok:true,engine:engine===webkit?'webkit':'chromium',realFreshEntry:true,exactLegacyRoleIndexNormalized:true,extensionIndexPreserved:true,syntheticKnown117To118Repair:true,repeatedReload:true,recordsAndRevokedAuthorityPreserved:true,unknownLineageFailedClosed:true,visibleSafeDiagnostic:diagnostic,fiveLanguages:true,mobileWidth:375,ownerRootCauseConfirmed:false}));
 }catch(error){await page.screenshot({path:root+'output/demo-lineage-failure-'+(engine===webkit?'webkit':'chromium')+'.png',fullPage:true}).catch(()=>{});throw error;}
 finally{await browser.close();preview?.kill('SIGTERM');}
