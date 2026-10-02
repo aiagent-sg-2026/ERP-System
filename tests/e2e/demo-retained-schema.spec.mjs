@@ -7,7 +7,7 @@ const url = process.env.DEMO_SCHEMA_URL || `http://127.0.0.1:${port}/`;
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const preview = process.env.DEMO_SCHEMA_URL ? null : spawn(process.execPath, [fileURLToPath(new URL('../../web/node_modules/vite/bin/vite.js', import.meta.url)), 'preview', '--host', '127.0.0.1', '--port', port, '--strictPort'], { cwd: root + '/web', stdio: 'ignore' });
 const engine = process.env.DEMO_STARTUP_ENGINE === 'webkit' ? webkit : chromium;
-const browser = await engine.launch({ headless:true, ...(process.env.DEMO_WEBKIT_EXECUTABLE ? { executablePath:process.env.DEMO_WEBKIT_EXECUTABLE } : {}) });
+const browser = await engine.launch({ headless:true, ...(process.env.DEMO_CHROMIUM_EXECUTABLE && engine === chromium ? { executablePath:process.env.DEMO_CHROMIUM_EXECUTABLE } : {}), ...(process.env.DEMO_WEBKIT_EXECUTABLE ? { executablePath:process.env.DEMO_WEBKIT_EXECUTABLE } : {}) });
 const context = await browser.newContext({ viewport:{width:942,height:818}, serviceWorkers:'allow' });
 const page = await context.newPage();
 const errors = [];
