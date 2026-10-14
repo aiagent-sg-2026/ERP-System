@@ -1,6 +1,7 @@
 /* Read-only, allowlisted static Demo diagnostics. Never inspect records/storage. */
 (function installDemoStartupDiagnostics(){
   if(typeof window.erpDataMode==='function'&&window.erpDataMode()!=='demo') return;
+  var foldOpen=false;
   var stages=new Set(['Preparing local demo database','Starting local demo database','Opening local demo database','Preparing base demo records','Checking database compatibility','Loading showcase data','Loading warehouse fixtures','Loading manufacturing fixtures','Loading quality fixtures','Loading sales fixtures','Loading delivery fixtures','Loading return fixtures','Loading debit fixtures','Loading pricing fixtures','Reading demo workspace','Demo database ready']);
   var codes=new Set(['demo_initialization_failed','demo_asset_fetch_failed','demo_manifest_invalid','demo_pack_integrity_failed','demo_schema_table_missing','demo_schema_index_ineligible','demo_schema_constraint_mismatch','demo_schema_index_mismatch','demo_schema_constraint_missing','demo_schema_index_repair_failed','demo_schema_lineage_unknown','demo_schema_lineage_mismatch','demo_schema_identity_invalid','demo_schema_repair_failed']);
   var assets=new Set(['erp-system-schema.sql','erp-system-migrations.sql','erp-system-demo-txn.sql','erp-system-demo-drafts.sql','erp-system-demo-picks.sql','erp-system-demo-manufacturing.sql','erp-system-demo-quality.sql','erp-system-demo-sales-front.sql','erp-system-demo-sales-delivery.sql','erp-system-demo-sales-return.sql','erp-system-demo-sales-debit.sql','erp-system-demo-sales-pricing.sql','erp-system-demo-sales-credit.sql','erp-system-demo-company-receipts.sql','erp-system-showcase-v1.sql','erp-system-showcase-v1.json','canonical seedDemo','VALIDATE DEMO MIGRATION IDENTITY','VALIDATE DEMO SCHEMA LINEAGE','REPAIR DEMO HR ORGANIZATION','REPAIR DEMO LEGACY ROLE INDEX','REPAIR DEMO HISTORICAL COMPANY PROFILE']);
@@ -61,7 +62,8 @@
       var language=host.closest('[lang]')&&host.closest('[lang]').getAttribute('lang')||document.documentElement.lang||'en';
       var copy=copies[language==='zh-Hans'?'zh':language]||copies.en;
       var data=snapshot();
-      var fold=document.createElement('details');fold.className='demo-diagnostic-fold';
+      var fold=document.createElement('details');fold.className='demo-diagnostic-fold';fold.open=foldOpen;
+      fold.addEventListener('toggle',function(){foldOpen=fold.open;});
       var toggle=document.createElement('summary');toggle.className='demo-diagnostic-toggle';toggle.textContent=copy.title+' · '+data.code;fold.appendChild(toggle);host.appendChild(fold);
       var title=document.createElement('strong');title.textContent=copy.title;fold.appendChild(title);
       var summary=document.createElement('p');summary.textContent=copy.stage+': '+data.stage+' · '+copy.code+': '+data.code+(data.statement?' · '+copy.statement+': '+data.statement:'');fold.appendChild(summary);
