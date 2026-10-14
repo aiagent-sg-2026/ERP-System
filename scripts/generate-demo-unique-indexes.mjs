@@ -2,14 +2,37 @@
 // This is schema metadata only: no seeds, grants or data backfills are executed.
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { PGlite } from '@electric-sql/pglite';
+import { pathToFileURL } from 'node:url';
+
+/** Parse the column-only startup arbiters; unsupported targets must not disappear. */
+export function parseConflictTargets(sql) {
+  const targets = new Map();
+  // Ignore prose and string contents, including ON CONFLICT mentioned in comments.
+  const source = sql.replace(/'(?:''|[^'])*'|--[^\n]*|\/\*[\s\S]*?\*\//g, ' ');
+  const identifier = '(?:"(?:[^"]|"")+"|[a-zA-Z_][a-zA-Z_0-9$]*)';
+  const inserts = new RegExp(`\\bINSERT\\s+INTO\\s+(${identifier})(?:\\s*\\.\\s*(${identifier}))?([\\s\\S]*?)(?=\\bINSERT\\s+INTO\\b|$)`, 'gi');
+  const decode = value => value.startsWith('"') ? value.slice(1, -1).replace(/""/g, '"') : value.toLowerCase();
+  const column = new RegExp(`^\\s*${identifier}\\s*$`);
+  for (const insert of source.matchAll(inserts)) {
+    const table = decode(insert[2] ?? insert[1]);
+    for (const conflict of insert[3].matchAll(/\bON\s+CONFLICT\b/gi)) {
+      const tail = insert[3].slice(conflict.index + conflict[0].length);
+      const target = /^\s*\(([^)]*)\)\s*DO\s+(?:NOTHING|UPDATE)\b/i.exec(tail);
+      if (!target || !target[1].split(',').every(value => column.test(value))) {
+        throw new Error(`Unsupported ON CONFLICT syntax for ${table}: expected a column-list target followed by DO NOTHING or DO UPDATE`);
+      }
+      const columns = target[1].split(',').map(value => decode(value.trim())).sort();
+      targets.set(table + ':' + columns.join(','), { table, columns });
+    }
+  }
+  return [...targets.values()];
+}
+
+async function main() {
 const targets = new Map();
 for (const file of readdirSync('web/public/db').filter(name => /^erp-system-(demo-.*|showcase-v1)\.sql$/.test(name))) {
-  const sql = readFileSync('web/public/db/' + file, 'utf8');
-  for (const insert of sql.matchAll(/INSERT INTO\s+"?(\w+)"?([\s\S]*?)(?=INSERT INTO|$)/gi)) {
-    for (const conflict of insert[2].matchAll(/ON CONFLICT\s*\(([^)]+)\)/gi)) {
-      const columns = conflict[1].split(',').map(value => value.replace(/["\s]/g, '')).sort();
-      targets.set(insert[1] + ':' + columns.join(','), { table: insert[1], columns });
-    }
+  for (const target of parseConflictTargets(readFileSync('web/public/db/' + file, 'utf8'))) {
+    targets.set(target.table + ':' + target.columns.join(','), target);
   }
 }
 const client = new PGlite();
@@ -49,3 +72,6 @@ try {
     console.log(`Generated ${required.length} canonical unique indexes.`);
   }
 } finally { await client.close(); }
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main();

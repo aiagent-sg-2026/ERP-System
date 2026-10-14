@@ -19,7 +19,7 @@ beforeAll(async () => {
 afterAll(async () => { await client.close(); });
 async function retainedData() {
   const result: Record<string, unknown> = {};
-  for (const table of ['company','employee','sales_credit_profile','role','app_user','role_permission','user_company_role','role_resource_scope','user_company_role_scope','user_permission_override']) {
+  for (const table of ['account','company','employee','sales_credit_profile','role','app_user','role_permission','user_company_role','role_resource_scope','user_company_role_scope','user_permission_override']) {
     result[table] = (await client.query(`select * from ${table} order by 1`)).rows;
   }
   return result;
@@ -28,6 +28,17 @@ describe('retained Demo unique-index integrity', () => {
   it('leaves a healthy schema and all tenant/authority records unchanged', async () => {
     const before = await retainedData();
     expect(await ensureDemoUniqueIndexes(client)).toEqual([]);
+    expect(await retainedData()).toEqual(before);
+  });
+  it('accepts a healthy canonical schema when search_path excludes public without changing the session path', async () => {
+    const before = await retainedData();
+    await client.exec('SET search_path = pg_catalog');
+    try {
+      expect(await ensureDemoUniqueIndexes(client)).toEqual([]);
+      expect((await client.query('SHOW search_path')).rows).toEqual([{ search_path: 'pg_catalog' }]);
+    } finally {
+      await client.exec('RESET search_path');
+    }
     expect(await retainedData()).toEqual(before);
   });
   it('reproduces SQLSTATE42P10 then repairs the missing arbiter without modifying retained data', async () => {
