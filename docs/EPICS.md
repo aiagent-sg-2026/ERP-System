@@ -2678,9 +2678,10 @@ Current truth:
 | TASK-254 | In progress | Leave date-overlap guard and employee-to-HR approval lifecycle verified locally against Demo/PGlite and domain/API tests; exact-head release evidence pending |
 | TASK-255 | Done | My/Company Receipts archive, mobile receipt cards, yearly category-keyword Pack/PDF/Print and scanner boundary verified locally |
 | TASK-256 | In progress | Company-owned BU/Position masters with explicit scoped HR access; PostgreSQL RLS rehearsal and exact-commit CI pending |
-| TASK-257 | In progress | Retained Demo unique-index drift repair without resetting browser data; delayed-recovery proof and exact-head evidence pending |
+| TASK-257 | Done | Retained Demo unique-index drift repair without resetting browser data; refreshed independent review found and fixed a P1 (PR 25), explicit failed-Modules/delayed-recovery assertions, main c123e01 CI and Pages verified; owner storage not verified |
 | TASK-258 | Done | Atomic retained Demo upgrades, safe diagnostics, marker-less canonical storage adoption and optional sample top-up tolerance; main 7d5725b CI/Pages verified, owner workspace click-through not observed |
 | TASK-259 | Todo | Root-cause the intermittent Staff phone persistence failure (read back NULL once in CI); reproducible harness and evidence-backed fix, no sleeps/retries |
+| TASK-260 | Todo | Harden the retained Demo startup-index integrity check: search_path-stable comparison, account in the rollback snapshot, schema-qualified INSERT discovery |
 
 Exit criteria: TASK-195–202 and TASK-204–205 pass their source, PostgreSQL, browser and operational
 acceptance criteria; all required current-HEAD CI gates pass; public

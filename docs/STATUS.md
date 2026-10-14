@@ -63,6 +63,8 @@ login action, transaction detail pages use the shared page gutter (PR 24), and C
 parallel (about 17-19 minutes instead of about 100). main 7d5725b CI and Pages deploy
 passed. Owner click-through into the workspace and production PostgreSQL/UAT are not
 verified. The intermittent Staff phone read-back failure is TASK-259.
+TASK-257 is closed (refreshed independent review fixed a P1 unconditional role-index drop in
+PR 25; main c123e01 CI and Pages verified); its three P2 follow-ups are TASK-260.
 
 ## 2026-10-02 retained Demo identity gate — repair follow-up
 

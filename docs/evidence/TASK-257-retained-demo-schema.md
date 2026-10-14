@@ -68,7 +68,7 @@ untouched. The uncommitted BU/Position showroom work remains preserved separatel
 - Original dirty inventory is byte-identical; source is isolated from the paused
   organization fixture work. No production activation occurred.
 
-Exact commit/review/CI/Pages/public validation will be appended only when observed.
+Exact commit/review/CI/Pages/public validation is recorded in the closure section below.
 
 ## Independent metadata review repair
 
@@ -81,3 +81,22 @@ closed without data changes; primary/deferrable structures are never auto-repair
 Safe source-owned statement labels identify fixture filenames or canonical index
 creation, without logging SQL, original Error objects, duplicate values or rows.
 The new exact head requires refreshed independent review and CI.
+
+## Closure evidence (observed 2026-10-14)
+
+- Original merge: PR 14, main `2b5c8d5` (2026-10-01); CI and the GitHub Pages deploy both
+  succeeded at that exact commit.
+- Refreshed independent review (omp, read-only, spot-checked by the manager) at the
+  2026-10-14 head: no P0; one P1 — the adapter's pending-migration path ran an unconditional
+  `drop index if exists "uq_role_master_name"` that could remove an unrelated extension
+  table's same-name unique index. Fixed by PR 25 (main `c123e01`); the new regression test
+  fails without the fix (`expected [] to deeply equal [Array(1)]`) and passes with it. Three
+  P2 robustness findings are tracked as TASK-260.
+- Acceptance item 4: `tests/e2e/demo-startup.spec.mjs` now asserts the failed Modules step
+  (catalogue-unavailable message, no module options, database not ready and no usable
+  client, Continue and sample entry disabled) and delayed recovery (Continue and sample
+  entry enabled, typed organisation and language preserved).
+- Exact-head CI: PR 25 passed all 24 checks and main `c123e01` passed CI
+  (2026-10-14 21:51-22:10 UTC, Chromium and WebKit Demo suites included). Pages deploy
+  38643488363 succeeded and the served build is PWA v300 without the unsafe drop.
+- Not verified: the owner's real retained browser storage and production PostgreSQL/UAT.
