@@ -33,8 +33,26 @@ inside the viewport and the page had no root horizontal overflow.
 
 ## Verification boundary
 
-Five focused Leave domain/API/calendar test files passed 18 tests. Lint,
-root/web typechecks, PGlite Demo proof and built Demo passed after the repair.
+Source-verified regression coverage:
+
+- `src/modules/hr/leaveApplication.test.ts`: submission overlap, opposite AM/PM
+  half days and final-approval overlap with a legacy approved absence.
+- `src/api/leaveApplication.integration.test.ts`: governed submission,
+  optimistic versions, withdrawal, void and HR approval.
+- `src/modules/hr/teamCalendar.test.ts`: Team Calendar overlapping-leave
+  conflict flags, scoped visibility and privacy.
+- `src/api/hrCalendar.integration.test.ts`: HR Calendar company-scoped holiday
+  facts, range limits and governed holiday approval (not leave-overlap rejection).
+- `tests/e2e/leave-overlap-mvp.spec.mjs`: real Demo/PGlite duplicate submission
+  rejection and HR approval, described above.
+
+The exact historical five-file domain/API/calendar run behind the reported
+18 passing tests was not found in the available evidence; the browser file above
+is separate, not a substitute for an unidentified fifth regression file.
+The historical lint, root/web typechecks, PGlite Demo proof and built Demo
+were reported as passing after the repair. No checks were rerun for this
+assertion/evidence edit; the new employment-end tests remain unverified.
+
 These checks cover local source and Demo behavior. Production workflow UAT,
 hosted release, PostgreSQL concurrency and external calendar delivery are
 separate verification gates.
