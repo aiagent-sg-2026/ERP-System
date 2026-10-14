@@ -129,6 +129,9 @@ try{
   assert.equal(await page.locator('#wizardShowcase').isEnabled(),false);
   const panel=page.locator('#setupWizardView .demo-startup-diagnostic');
   assert.equal(await panel.isVisible(),true);
+  // Collapsed by default: a thin strip that does not push the wizard controls around.
+  assert((await panel.boundingBox()).height<=12,'Collapsed startup diagnostic must stay a thin strip');
+  await panel.locator('.demo-diagnostic-toggle').click();
   assert.match(await panel.innerText(),/demo_schema_lineage_unknown/);
   assert.match(await panel.innerText(),/Checking database compatibility/);
   assert.match(await panel.innerText(),/VALIDATE DEMO SCHEMA LINEAGE/);
@@ -151,7 +154,7 @@ try{
   await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('fictional clipboard unavailable');}}}));
   await panel.getByRole('button',{name:'Copy diagnostic',exact:true}).click();
   assert.match(await panel.innerText(),/Could not copy/);
-  await panel.locator('summary').click();
+  await panel.locator('details:not(.demo-diagnostic-fold) > summary').click();
   assert.equal(await panel.locator('pre').isVisible(),true);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);
   for(const [language,label] of Object.entries({en:'Copy diagnostic',zh:'复制诊断',ms:'Salin diagnostik',ja:'診断をコピー',vi:'Sao chép chẩn đoán'})){

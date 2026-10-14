@@ -20,7 +20,7 @@ const prefixSql=canonical.slice(0,boundary);
 const prefixTables=await (async()=>{const probe=new PGlite();try{await probe.exec(prefixSql);return (await probe.query("select tablename from pg_tables where schemaname='public' order by 1")).rows.map(row=>row.tablename);}finally{await probe.close();}})();
 // A retained Demo is a seeded Demo: copy a freshly seeded Demo's rows into the exact pre-0080 schema.
 // Tables/columns introduced later do not exist there, so they are ignored by json_populate_recordset.
-async function retainedDump(seeded){
+async function retainedDump(seeded,removeCanonicalSamples){
   const prior=new PGlite();
   try{
     await prior.exec(prefixSql);
@@ -28,6 +28,10 @@ async function retainedDump(seeded){
     for(const [table,rows] of Object.entries(seeded))if(rows.length){
       const columns=(await prior.query("select attname from pg_attribute where attrelid=format('%I.%I','public',$1::text)::regclass and attnum>0 and not attisdropped and attgenerated=''",[table])).rows.map(row=>`"${row.attname}"`).join(',');
       await prior.query(`insert into "${table}"(${columns}) overriding system value select ${columns} from json_populate_recordset(null::"${table}",$1::json)`,[JSON.stringify(rows)]);
+    }
+    if(removeCanonicalSamples){
+      if(prefixTables.includes('customer'))await prior.exec("delete from customer where master_fn='M1' and company_fn='C-SG' and code='CUST1'");
+      if(prefixTables.includes('warehouse'))await prior.exec("delete from warehouse where master_fn='M1' and company_fn='C-SG' and code='WH-SALES'");
     }
     await prior.exec("set session_replication_role=origin");
     assert.deepEqual((await prior.query("select tablename from pg_tables where schemaname='public' and tablename in ('_erp_demo_migration','_erp_demo_schema_identity')")).rows,[]);
@@ -58,7 +62,7 @@ try{
     await new Promise(resolve=>setTimeout(resolve,200));
   }
   assert(serving,'Demo preview must become available');
-  for(const viewport of [{width:375,height:812},undefined]){
+  for(const removeCanonicalSamples of [false,true])for(const viewport of [{width:375,height:812},undefined]){
     const context=await browser.newContext({...(viewport?{viewport}:{}),serviceWorkers:'allow'});
     try{
       const page=await context.newPage();
@@ -68,7 +72,7 @@ try{
       await page.goto(url,{waitUntil:'domcontentloaded'});
       await ready(page);
       const seeded=await page.evaluate(async tables=>{const out={};for(const table of tables)out[table]=(await ErpSystemData.db.query(`select * from "${table}"`)).rows;return out;},prefixTables);
-      const {dump,preserved}=await retainedDump(seeded);
+      const {dump,preserved}=await retainedDump(seeded,removeCanonicalSamples);
       // No existing E2E node-dump injection helper was found. This uses the
       // installed PGlite dump/load API, not a patched startup or schema downgrade.
       // Browser import/persistence is UNVERIFIED until this spec is executed.
@@ -112,7 +116,7 @@ try{
       await ready(page);
       assert.deepEqual(await preservation(page),before);
       assert.deepEqual(errors,[]);
-      console.log(JSON.stringify({ok:true,scenario:'unmarked-v79',viewport:page.viewportSize(),latest:latest.version,fictionalRowsPreserved:true}));
+      console.log(JSON.stringify({ok:true,scenario:removeCanonicalSamples?'unmarked-v79-missing-canonical-samples':'unmarked-v79',viewport:page.viewportSize(),latest:latest.version,fictionalRowsPreserved:true}));
     }finally{await context.close();}
   }
 }finally{await browser?.close();preview?.kill('SIGTERM');}

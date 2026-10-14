@@ -1241,6 +1241,15 @@
     applyData(payload, mode);
   }
 
+  async function optionalTopUp(label, run, freshlySeeded){
+    try {
+      await run();
+    } catch (error) {
+      if (freshlySeeded) throw error;
+      console.warn('Demo sample top-up skipped:',label,error && error.code ? error.code : '');
+    }
+  }
+
   async function bootPglite(){
     reportBootProgress(3,'Starting local demo database','Loading PGlite and connecting to IndexedDB…','loading');
     var runtime = await window.ErpDemoRuntimeReady;
@@ -1261,27 +1270,27 @@
       await runtime.upgradeDemoSchema(db,ensureSchemaUpToDate);
       // Table/column presence and version markers do not prove ON CONFLICT arbiters exist.
       await runtime.ensureDemoUniqueIndexes(db);
-      await ensureDemoDrafts(db);
+      await optionalTopUp('ensureDemoDrafts',function(){ return ensureDemoDrafts(db); },freshlySeeded);
       reportBootProgress(45,'Loading showcase data','Preparing the deterministic enterprise demo pack…','loading');
       var showcaseLoaded = await ensureShowcasePack(db, freshlySeeded);
       await ensureCompanyReceiptReadFixture(db);
       reportBootProgress(53,'Loading warehouse fixtures','Preparing inventory and picking examples…','loading');
-      await ensureWarehousePickFixture(db);
+      await optionalTopUp('ensureWarehousePickFixture',function(){ return ensureWarehousePickFixture(db); },freshlySeeded);
       reportBootProgress(61,'Loading manufacturing fixtures','Preparing work orders and production examples…','loading');
-      await ensureManufacturingFixture(db);
+      await optionalTopUp('ensureManufacturingFixture',function(){ return ensureManufacturingFixture(db); },freshlySeeded);
       reportBootProgress(68,'Loading quality fixtures','Preparing inspection and quality examples…','loading');
-      await ensureQualityFixture(db);
+      await optionalTopUp('ensureQualityFixture',function(){ return ensureQualityFixture(db); },freshlySeeded);
       reportBootProgress(75,'Loading sales fixtures','Preparing the sales front workspace…','loading');
-      await ensureSalesFrontFixture(db);
+      await optionalTopUp('ensureSalesFrontFixture',function(){ return ensureSalesFrontFixture(db); },freshlySeeded);
       reportBootProgress(82,'Loading delivery fixtures','Preparing delivery and fulfillment examples…','loading');
-      await ensureSalesDeliveryFixture(db);
+      await optionalTopUp('ensureSalesDeliveryFixture',function(){ return ensureSalesDeliveryFixture(db); },freshlySeeded);
       reportBootProgress(87,'Loading return fixtures','Preparing sales return examples…','loading');
-      await ensureSalesReturnFixture(db);
+      await optionalTopUp('ensureSalesReturnFixture',function(){ return ensureSalesReturnFixture(db); },freshlySeeded);
       reportBootProgress(91,'Loading debit fixtures','Preparing debit-note examples…','loading');
-      await ensureSalesDebitFixture(db);
+      await optionalTopUp('ensureSalesDebitFixture',function(){ return ensureSalesDebitFixture(db); },freshlySeeded);
       reportBootProgress(95,'Loading pricing fixtures','Preparing pricing and credit examples…','loading');
-      await ensureSalesPricingFixture(db);
-      await ensureSalesCreditFixture(db);
+      await optionalTopUp('ensureSalesPricingFixture',function(){ return ensureSalesPricingFixture(db); },freshlySeeded);
+      await optionalTopUp('ensureSalesCreditFixture',function(){ return ensureSalesCreditFixture(db); },freshlySeeded);
       reportBootProgress(98,'Reading demo workspace','Preparing the sign-in screen…','loading');
       var payload = await readPayload(db);
       if (!payload.master) throw new Error('PGlite payload empty (no master row)');

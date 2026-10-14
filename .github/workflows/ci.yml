@@ -93,8 +93,10 @@ jobs:
           mkdir -p output
           node tests/e2e/demo-lineage-diagnostics.spec.mjs 2>&1 | tee output/demo-lineage-${{ matrix.browser }}.log
 
-      - name: Marker-less canonical retained Demo storage adoption
-        if: ${{ !cancelled() }}
+      # The IndexedDB replacement technique is blocked by WebKit's open connections
+      # ("Demo IndexedDB replacement blocked"); the product path itself is engine-neutral.
+      - name: Marker-less canonical retained Demo storage adoption (Chromium)
+        if: ${{ !cancelled() && matrix.browser == 'chromium' }}
         run: |
           set -o pipefail
           mkdir -p output
