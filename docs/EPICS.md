@@ -2677,6 +2677,7 @@ Current truth:
 | TASK-253 | Done | Staff directory combined filters and governed accountless employment end verified locally in Demo/API tests and desktop/375px browser |
 | TASK-254 | Done | Leave date-overlap guard and employee-to-HR approval lifecycle verified locally against Demo/PGlite and domain/API tests |
 | TASK-255 | Done | My/Company Receipts archive, mobile receipt cards, yearly category-keyword Pack/PDF/Print and scanner boundary verified locally |
+| TASK-259 | Todo | Root-cause the intermittent Staff phone persistence failure (read back NULL once in CI); reproducible harness and evidence-backed fix, no sleeps/retries |
 
 Exit criteria: TASK-195–202 and TASK-204–205 pass their source, PostgreSQL, browser and operational
 acceptance criteria; all required current-HEAD CI gates pass; public
