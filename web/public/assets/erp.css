@@ -790,7 +790,10 @@ html[data-theme="dark"][data-background="mist"] .auth-view{background:radial-gra
 html[data-theme="dark"][data-background="mist"] #setupWizardView.auth-view{background:radial-gradient(circle at 76% 16%,rgba(56,189,248,.20),transparent 30%),linear-gradient(145deg,#0d1720,#121c2d 58%,#0c1a2a);}
 
 /* Local startup diagnostics stay readable in the fixed wizard and mobile shell. */
-.demo-startup-diagnostic{border:1px solid var(--border);border-radius:12px;padding:12px;display:grid;gap:8px;min-width:0;font-size:12px;text-align:left;overflow-wrap:anywhere;background:var(--surface)}
+.demo-startup-diagnostic{display:block;min-width:0;font-size:12px;text-align:left;overflow-wrap:anywhere}
+.demo-diagnostic-fold>.demo-diagnostic-toggle{height:10px;line-height:10px;font-size:9px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;color:var(--muted);list-style:none}
+.demo-diagnostic-fold>.demo-diagnostic-toggle::-webkit-details-marker{display:none}
+.demo-diagnostic-fold[open]{border:1px solid var(--border);border-radius:12px;padding:12px;display:grid;gap:8px;background:var(--surface)}
 .demo-startup-diagnostic[hidden]{display:none}
 .demo-startup-diagnostic p{margin:0}
 .demo-diagnostic-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}

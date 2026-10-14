@@ -61,8 +61,10 @@
       var language=host.closest('[lang]')&&host.closest('[lang]').getAttribute('lang')||document.documentElement.lang||'en';
       var copy=copies[language==='zh-Hans'?'zh':language]||copies.en;
       var data=snapshot();
-      var title=document.createElement('strong');title.textContent=copy.title;host.appendChild(title);
-      var summary=document.createElement('p');summary.textContent=copy.stage+': '+data.stage+' · '+copy.code+': '+data.code+(data.statement?' · '+copy.statement+': '+data.statement:'');host.appendChild(summary);
+      var fold=document.createElement('details');fold.className='demo-diagnostic-fold';
+      var toggle=document.createElement('summary');toggle.className='demo-diagnostic-toggle';toggle.textContent=copy.title+' · '+data.code;fold.appendChild(toggle);host.appendChild(fold);
+      var title=document.createElement('strong');title.textContent=copy.title;fold.appendChild(title);
+      var summary=document.createElement('p');summary.textContent=copy.stage+': '+data.stage+' · '+copy.code+': '+data.code+(data.statement?' · '+copy.statement+': '+data.statement:'');fold.appendChild(summary);
       var actions=document.createElement('div');actions.className='demo-diagnostic-actions';
       var copyButton=document.createElement('button');copyButton.type='button';copyButton.className='btn soft';copyButton.textContent=copy.copy;
       var status=document.createElement('span');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
@@ -71,9 +73,9 @@
         catch{status.textContent=copy.copyFailed;}
       });
       var retry=document.createElement('button');retry.type='button';retry.className='btn ghost';retry.textContent=copy.retry;retry.addEventListener('click',function(){location.reload();});
-      actions.append(copyButton,retry,status);host.appendChild(actions);
-      var details=document.createElement('details');var label=document.createElement('summary');label.textContent=copy.copy;var text=document.createElement('pre');text.textContent=serialize();details.append(label,text);host.appendChild(details);
-      var notice=document.createElement('small');notice.textContent=copy.notice;host.appendChild(notice);
+      actions.append(copyButton,retry,status);fold.appendChild(actions);
+      var details=document.createElement('details');var label=document.createElement('summary');label.textContent=copy.copy;var text=document.createElement('pre');text.textContent=serialize();details.append(label,text);fold.appendChild(details);
+      var notice=document.createElement('small');notice.textContent=copy.notice;fold.appendChild(notice);
     });
   }
   window.ErpDemoDiagnostics=Object.freeze({failure:failure,snapshot:snapshot,serialize:serialize,render:render});

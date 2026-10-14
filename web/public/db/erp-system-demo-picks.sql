@@ -30,7 +30,10 @@ BEGIN
 
   IF v_warehouse_id IS NULL OR v_bin_id IS NULL
      OR v_widget_id IS NULL OR v_gadget_id IS NULL THEN
-    RAISE EXCEPTION 'Canonical warehouse pick fixture prerequisites are missing';
+    -- A retained database may have renamed or removed the canonical sample rows.
+    -- This is an optional top-up: skip it instead of blocking Demo startup.
+    RAISE NOTICE 'Canonical warehouse pick fixture skipped: sample prerequisites are missing';
+    RETURN;
   END IF;
 
   INSERT INTO warehouse_pick (

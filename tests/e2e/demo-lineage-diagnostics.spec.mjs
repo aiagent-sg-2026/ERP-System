@@ -129,6 +129,9 @@ try{
   assert.equal(await page.locator('#wizardShowcase').isEnabled(),false);
   const panel=page.locator('#setupWizardView .demo-startup-diagnostic');
   assert.equal(await panel.isVisible(),true);
+  // Collapsed by default: a thin strip that does not push the wizard controls around.
+  assert((await panel.boundingBox()).height<=12,'Collapsed startup diagnostic must stay a thin strip');
+  await panel.locator('.demo-diagnostic-toggle').click();
   assert.match(await panel.innerText(),/demo_schema_lineage_unknown/);
   assert.match(await panel.innerText(),/Checking database compatibility/);
   assert.match(await panel.innerText(),/VALIDATE DEMO SCHEMA LINEAGE/);
