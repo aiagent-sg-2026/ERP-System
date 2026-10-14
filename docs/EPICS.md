@@ -2674,8 +2674,8 @@ Current truth:
 | TASK-223 | Done | Resolve payment voucher recovery audit timing uncertainty; Promise-aware 10-second recovery budget and full 129-route audit pass |
 | TASK-251 | Done | Local Company, Employee, Leave and Receipts Demo E2E; localized module-blocked title repaired, with scanner/production limits recorded |
 | TASK-252 | Done | Governed Company profile view/edit for HR/Admin MVP verified locally in Demo/API tests and desktop/375px browser |
-| TASK-253 | In progress | Staff directory combined filters and governed accountless employment end verified locally in Demo/API tests and desktop/375px browser; exact-head release evidence pending |
-| TASK-254 | In progress | Leave date-overlap guard and employee-to-HR approval lifecycle verified locally against Demo/PGlite and domain/API tests; exact-head release evidence pending |
+| TASK-253 | Done | Staff directory combined filters and governed accountless employment end verified locally in Demo/API tests and desktop/375px browser; main 0c2e726 CI and Pages verified; owner storage and production not verified |
+| TASK-254 | Done | Leave date-overlap guard and employee-to-HR approval lifecycle verified locally against Demo/PGlite and domain/API tests; main 0c2e726 CI and Pages verified; owner storage and production not verified |
 | TASK-255 | Done | My/Company Receipts archive, mobile receipt cards, yearly category-keyword Pack/PDF/Print and scanner boundary verified locally |
 | TASK-256 | In progress | Company-owned BU/Position masters with explicit scoped HR access; PostgreSQL RLS rehearsal and exact-commit CI pending |
 | TASK-257 | Done | Retained Demo unique-index drift repair without resetting browser data; refreshed independent review found and fixed a P1 (PR 25), explicit failed-Modules/delayed-recovery assertions, main c123e01 CI and Pages verified; owner storage not verified |

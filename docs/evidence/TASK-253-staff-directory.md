@@ -42,3 +42,21 @@ no root horizontal overflow and the browser reported zero page/console errors.
   `docs/STATUS.md` after the final local run.
 - This is local Demo and API-source evidence. A production PostgreSQL migration,
   hosted login/UAT and client offboarding policy review are separate.
+
+## Closure evidence (observed 2026-10-14)
+
+- An omp read-only acceptance audit (spot-checked by the manager) found the documentation
+  items already met and two assertion gaps; PR 27 (main `0c2e726`) closed them: the
+  employment-end reason is required and bounded (missing, empty, whitespace-only, 2 and 501
+  characters are rejected with `employment_reason_required`/422 and the employee row and
+  audit rows are unchanged), and the API returns 422 `employment_reason_required` and 409
+  `employee_stale` for a stale optimistic token. With the reason validation neutralised the
+  four reason cases fail (negative control).
+- Existing coverage confirmed by the audit: unauthorized 403, cross-Company 404 and
+  account-owner 409 in `src/api/employeeUpdate.integration.test.ts`; account offboarding
+  required in `src/modules/hr/employeeEnd.test.ts`.
+- Exact-head CI: PR 27 passed 24 checks and main `0c2e726` passed CI (2026-10-14
+  22:44-23:03 UTC); Pages deploy 38649686171 succeeded.
+- Not verified: the owner's real browser storage, production PostgreSQL/UAT, a cross-Master
+  end attempt (the fixtures seed only `M1`), and the intermittent Staff phone read-back
+  failure tracked as TASK-259.

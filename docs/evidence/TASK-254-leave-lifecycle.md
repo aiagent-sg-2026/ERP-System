@@ -50,9 +50,20 @@ The exact historical five-file domain/API/calendar run behind the reported
 18 passing tests was not found in the available evidence; the browser file above
 is separate, not a substitute for an unidentified fifth regression file.
 The historical lint, root/web typechecks, PGlite Demo proof and built Demo
-were reported as passing after the repair. No checks were rerun for this
-assertion/evidence edit; the new employment-end tests remain unverified.
+were reported as passing after the repair. See the closure evidence below for
+what was observed on 2026-10-14.
 
 These checks cover local source and Demo behavior. Production workflow UAT,
 hosted release, PostgreSQL concurrency and external calendar delivery are
 separate verification gates.
+
+## Closure evidence (observed 2026-10-14)
+
+- An omp read-only acceptance audit (spot-checked by the manager) confirmed the
+  documentation items (`docs/PROJECT_LOGIC.md`, `docs/STATUS.md`, `docs/PROGRESS.md`) were
+  already met and that the five regression files above exist; PR 27 (main `0c2e726`) now names
+  them in this document.
+- Exact-head CI: main `0c2e726` passed CI (2026-10-14 22:44-23:03 UTC, all Vitest shards);
+  Pages deploy 38649686171 succeeded.
+- Not verified: the exact historical five-file 18-test run; the leave-overlap browser spec was
+  not re-run for this closure; production workflow UAT and external calendar delivery.

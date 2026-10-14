@@ -65,6 +65,9 @@ passed. Owner click-through into the workspace and production PostgreSQL/UAT are
 verified. The intermittent Staff phone read-back failure is TASK-259.
 TASK-257 is closed (refreshed independent review fixed a P1 unconditional role-index drop in
 PR 25; main c123e01 CI and Pages verified); its three P2 follow-ups are TASK-260.
+TASK-253 and TASK-254 are closed (assertion gaps for the end-employment reason and stale token
+added in PR 27; main 0c2e726 CI and Pages verified); owner storage, production and a
+cross-Master end attempt are not verified.
 
 ## 2026-10-02 retained Demo identity gate — repair follow-up
 
