@@ -124,6 +124,7 @@ body.auth-locked{overflow:auto;}
 .platform-realm-tab:focus-visible{position:relative;z-index:1;outline-offset:2px;}
 .auth-form{display:flex;flex-direction:column;gap:13px;min-width:0;}
 .auth-form .btn{width:100%;min-width:0;justify-content:center;}
+.auth-login-divider{border-top:1px solid var(--hairline);}
 .auth-realm-panel{display:flex;flex-direction:column;gap:13px;min-width:0;}
 .auth-realm-recovery{display:flex;justify-content:flex-start;margin-top:-2px;}
 .auth-realm-recovery .btn{width:auto;min-width:0;padding:0;color:var(--accent);font-size:calc(12.5px * var(--fs,1));}

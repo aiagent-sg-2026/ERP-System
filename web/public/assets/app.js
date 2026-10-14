@@ -270,14 +270,14 @@ function renderLogin(){
       ${apiMode
         ? `<div class="fld"><label class="fldlabel" for="loginOrganizationCode">Organization code</label><input id="loginOrganizationCode" name="organizationCode" value="${esc(loginHint.organizationCode)}" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. ACME"></div>
            <div class="fld"><label class="fldlabel" for="loginUsername">Username</label><input id="loginUsername" name="username" value="${esc(loginHint.username)}" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. admin"></div>`
-        : `<div class="fld"><label class="fldlabel" for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username" value="${esc(u.email)}"></div>`}
+        : `<button class="btn primary lg" type="button" id="loginShowcase" ${window.ErpSystemData?.databaseReady===true?'':'disabled'}>${esc(showcaseCopy.entry)}</button><div class="auth-login-divider" aria-hidden="true"></div><div class="fld"><label class="fldlabel" for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username" value="${esc(u.email)}"></div>`}
       <div class="fld"><label class="fldlabel" for="loginPassword">Password</label><div class="auth-password-control"><input id="loginPassword" type="password" autocomplete="current-password" placeholder="${apiMode?'':'Account password'}"><button type="button" class="auth-password-toggle" id="loginPasswordToggle" aria-controls="loginPassword" aria-label="Show password" aria-pressed="false"><span class="auth-password-toggle-icon">${ic('eye')}</span><span>Show</span></button></div></div>
       ${apiMode?`<label class="auth-remember" id="loginRememberDeviceRow"><input id="loginRememberDevice" type="checkbox" name="rememberDevice" ${rememberedLogin?'checked':''}><span>Remember this device (up to 30 days)</span></label>`:''}
       <div class="auth-error" id="loginError" role="alert"></div>
       ${apiMode?'<p class="auth-help">Use the credentials created during first-run setup. The password is never stored in this browser.</p>':''}
-      <button class="btn primary lg" type="submit">${ic('signout')}<span>Sign in</span></button>
+      <button class="btn ${apiMode?'primary':'soft'} lg" type="submit">${ic('signout')}<span>Sign in</span></button>
       ${demoOneClickAvailable?`<button class="btn soft lg" type="button" id="demoLoginBtn">${ic('user')}<span>Continue as ${esc(u.name)}</span></button>`:''}
-      ${!apiMode?`<div class="auth-help" role="status" id="demoStartupStatus"></div><div data-demo-diagnostic hidden></div><button class="btn soft lg" type="button" id="loginShowcase" ${window.ErpSystemData?.databaseReady===true?'':'disabled'}>${esc(showcaseCopy.entry)}</button><div class="auth-demo-actions">
+      ${!apiMode?`<div class="auth-help" role="status" id="demoStartupStatus"></div><div data-demo-diagnostic hidden></div><div class="auth-demo-actions">
         <button class="btn soft" type="button" id="demoResetBtn">${ic('refresh')}<span>Reset demo database</span></button>
         <small>Restore the original demo data in this browser.</small>
       </div>`:''}
