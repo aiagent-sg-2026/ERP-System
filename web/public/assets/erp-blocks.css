@@ -126,7 +126,7 @@
 
 /* ===== document screen (transaction) ===== */
 .docwrap{flex:1;overflow:auto;min-height:0;}
-.docpage{max-width:1280px;margin:0 auto;padding:12px 24px 96px;}
+.docpage{max-width:calc(var(--page-max) + 2 * var(--page-gutter));margin:0 auto;padding:12px var(--page-gutter) 96px;}
 .dochead{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-l);padding:18px 20px;margin-bottom:16px;}
 .dh-row1{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;}
 .dh-row1 .dt{min-width:0;font-size:calc(23px * var(--fs,1));font-weight:600;letter-spacing:-.02em;display:flex;align-items:center;gap:10px;}
@@ -217,7 +217,7 @@
 /* document layout = lines + side summary */
 .doclayout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start;}
 .docmain{min-width:0;display:flex;flex-direction:column;gap:16px;}
-.sales-order-detail{max-width:1280px;padding-top:12px;}
+.sales-order-detail{padding-top:12px;}
 .sales-order-detail .dochead{padding:20px 22px;box-shadow:0 1px 2px rgba(0,0,0,.025);}
 .sales-order-detail .doclayout{grid-template-columns:minmax(0,1fr) minmax(280px,320px);gap:18px;}
 .sales-order-detail .stepper{display:grid;grid-template-columns:auto minmax(14px,1fr) auto minmax(14px,1fr) auto minmax(14px,1fr) auto minmax(14px,1fr) auto minmax(14px,1fr) auto;width:100%;}
@@ -228,7 +228,6 @@
 .sales-order-lines-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;outline:none;}
 .sales-order-lines-scroll:focus-visible{box-shadow:inset 0 0 0 2px var(--accent);}
 .sales-order-lines-scroll table.lines{min-width:690px;}
-.work-order-detail{max-width:1280px;}
 .work-order-progress{height:7px;margin-top:16px;overflow:hidden;border-radius:999px;background:var(--surface-3);box-shadow:inset 0 0 0 1px var(--hairline);}
 .work-order-progress>i{display:block;width:0;height:100%;border-radius:inherit;background:var(--accent);transition:width .24s var(--ease);}
 .work-order-table-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;outline:none;}
