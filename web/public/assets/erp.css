@@ -3,6 +3,7 @@
    Forked from the Aria Inventory reference. Light + dark.
    ============================================================ */
 :root{
+  --page-gutter:24px; --page-max:1600px;
   --bg:#F5F5F7; --surface:#FFFFFF; --surface-2:#FBFBFD; --surface-3:#F1F2F5;
   --material:rgba(255,255,255,.72);
   --fg:#1D1D1F; --muted:#6E6E73; --faint:#9A9AA0;
@@ -484,7 +485,7 @@ body.auth-locked{overflow:auto;}
 .preview-write-disabled{cursor:not-allowed!important;opacity:.48!important;filter:saturate(.55);}
 
 /* ===== page head ===== */
-.pagehead{padding:18px 24px 8px;flex:none;}
+.pagehead{padding:18px var(--page-gutter) 8px;flex:none;}
 .crumb{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:calc(12.5px * var(--fs,1));margin-bottom:7px;flex-wrap:wrap;}
 .crumb button{color:var(--muted);padding:0;font-size:calc(12.5px * var(--fs,1));cursor:pointer;}
 .crumb button:hover{color:var(--fg);}
@@ -558,7 +559,7 @@ h1{font-size:calc(27px * var(--fs,1));font-weight:600;letter-spacing:-.02em;marg
 
 /* ===== data table (CSS-grid div implementation) ===== */
 .tablewrap{flex:1;overflow:auto;min-height:0;}
-.dt-page{max-width:1600px;margin:0 auto;width:100%;}
+.dt-page{max-width:var(--page-max);margin:0 auto;width:100%;}
 .dt{min-width:760px;font-size:calc(13.5px * var(--fs,1));}
 .dt-r{display:grid;grid-template-columns:var(--tpl);align-items:center;min-height:var(--row-h);border-bottom:1px solid var(--hairline);}
 .dt-head{background:var(--surface);min-height:34px;border-bottom:1px solid var(--border);}

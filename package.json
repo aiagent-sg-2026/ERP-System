@@ -41,6 +41,7 @@
     "verify:release": "node scripts/verify-release.mjs",
     "smoke": "node scripts/smoke.mjs",
     "test:e2e:master-data": "npm run build:demo && node tests/e2e/master-data-editor.spec.mjs",
+    "test:e2e:doc-gutters": "npm run build:demo && node tests/e2e/doc-gutters.spec.mjs",
     "test:e2e:leave": "npm run build:demo && node tests/e2e/my-leave-validation.spec.mjs",
     "test:e2e:hr-kpi": "npm run build:demo && node tests/e2e/hr-directory-kpi.spec.mjs",
     "test:e2e:leave-approval": "npm run build:demo && node tests/e2e/leave-approval-action.spec.mjs",
