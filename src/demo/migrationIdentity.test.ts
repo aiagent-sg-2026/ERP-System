@@ -173,6 +173,16 @@ describe('identity-aware bounded retained Demo compatibility',()=>{
       expect((await db.query("select indexdef from pg_indexes where schemaname='public' and indexname='uq_role_master_name'")).rows).toEqual([{indexdef:'CREATE UNIQUE INDEX uq_role_master_name ON public.retained_custom_note USING btree (id)'}]);
     }finally{await db.close();}
   });
+  it('preserves an unrelated extension index with the obsolete name through pending migrations in the actual late runner',async()=>{
+    const db=await fixture(117);
+    try{
+      await db.exec('create unique index uq_role_master_name on retained_custom_note(id)');
+      const before=await preserved(db);
+      await upgradeDemoSchema(db,orderedRunner());
+      expect(await preserved(db)).toEqual(before);
+      expect((await db.query("select indexdef from pg_indexes where schemaname='public' and indexname='uq_role_master_name'")).rows).toEqual([{indexdef:'CREATE UNIQUE INDEX uq_role_master_name ON public.retained_custom_note USING btree (id)'}]);
+    }finally{await db.close();}
+  });
   it.each([true,false])('rolls back obsolete-index normalization and identity/HR changes on interrupted %s initialization',async current=>{
     const db=await fixture(current?latestIdentity.version:118,current);
     try{
