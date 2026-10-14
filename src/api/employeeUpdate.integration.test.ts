@@ -209,6 +209,28 @@ describe('employee profile update API', () => {
     expect((await submit(accountHolder.id, 'end-account-holder', {
       ...payload, expectedUpdatedAt: accountHolder.updatedAt.toISOString(),
     })).status).toBe(409);
+    for (const [key, body] of [
+      ['end-reason-missing', { expectedUpdatedAt: payload.expectedUpdatedAt }],
+      ['end-reason-short', { ...payload, reason: 'ab' }],
+    ] as const) {
+      const invalidReason = await submit(subject.id, key, body);
+      expect(invalidReason.status).toBe(422);
+      expect((await invalidReason.json()).error.code).toBe('employment_reason_required');
+      const [unchanged] = await db.select().from(employee).where(eq(employee.id, subject.id));
+      expect(unchanged).toEqual(subject);
+    }
+    const stale = await submit(subject.id, 'end-stale', {
+      ...payload, expectedUpdatedAt: new Date(0).toISOString(),
+    });
+    expect(stale.status).toBe(409);
+    expect((await stale.json()).error.code).toBe('employee_stale');
+    const [unchanged] = await db.select().from(employee).where(eq(employee.id, subject.id));
+    expect(unchanged).toEqual(subject);
+    expect(unchanged.isActive).toBe(true);
+    expect(await db.select().from(auditLog).where(and(
+      eq(auditLog.entity, 'hr/employees'), eq(auditLog.entityId, String(subject.id)),
+      eq(auditLog.action, 'end_employment'),
+    ))).toHaveLength(0);
     const saved = await submit(subject.id, 'end-once');
     expect(saved.status).toBe(200);
     expect(await saved.json()).toMatchObject({ data: { employee: { id: subject.id, isActive: false }, reportsReassigned: 0 } });

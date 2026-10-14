@@ -8,6 +8,37 @@ import { createEmployeeWithin, endEmployeeEmploymentWithin, EmployeeUpdateError 
 const scope = { masterFn: 'M1', companyFn: 'C-SG' };
 
 describe('end accountless employee employment', () => {
+  it.each([
+    ['missing', undefined],
+    ['empty', ''],
+    ['whitespace-only', ' \t\n '],
+    ['two characters', 'ab'],
+    ['501 characters', 'a'.repeat(501)],
+  ])('rejects a %s employment-end reason without changing the employee or audit', async (_label, reason) => {
+    const db = await freshDb();
+    await seedDemo(db);
+    const [admin] = await db.select().from(appUser).where(eq(appUser.username, 'admin'));
+    const [source] = await db.select().from(employee).where(eq(employee.employeeNo, 'EMP-1088'));
+    const auditsBefore = await db.select().from(auditLog).where(and(
+      eq(auditLog.entity, 'hr/employees'), eq(auditLog.entityId, String(source.id)),
+    ));
+    expect(source.isActive).toBe(true);
+    await expect(db.transaction(tx => endEmployeeEmploymentWithin(tx, scope, source.id, {
+      expectedUpdatedAt: source.updatedAt.toISOString(),
+      // Missing reason exercises the runtime boundary despite the required TypeScript field.
+      reason: reason as string,
+      actorUserId: admin.userId, requestId: 'employee-end-invalid-reason',
+    }))).rejects.toMatchObject({
+      name: 'EmployeeUpdateError', code: 'employment_reason_required', status: 422,
+    });
+    const [unchanged] = await db.select().from(employee).where(eq(employee.id, source.id));
+    expect(unchanged).toEqual(source);
+    expect(unchanged.isActive).toBe(true);
+    expect(await db.select().from(auditLog).where(and(
+      eq(auditLog.entity, 'hr/employees'), eq(auditLog.entityId, String(source.id)),
+    ))).toEqual(auditsBefore);
+  });
+
   it('keeps the record, hands off direct reports and records a reasoned audit', async () => {
     const db = await freshDb();
     await seedDemo(db);
