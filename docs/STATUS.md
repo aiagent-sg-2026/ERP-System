@@ -68,6 +68,10 @@ PR 25; main c123e01 CI and Pages verified); its three P2 follow-ups are TASK-260
 TASK-253 and TASK-254 are closed (assertion gaps for the end-employment reason and stale token
 added in PR 27; main 0c2e726 CI and Pages verified); owner storage, production and a
 cross-Master end attempt are not verified.
+TASK-260 is closed (the search_path finding was disproved by reproduction; the account rollback
+snapshot and schema-qualified INSERT discovery were fixed in PR 29; main a385aa0 CI and Pages
+verified). The intermittent Staff phone read-back failure (TASK-259) has now occurred twice in
+CI, both times passing on re-run, once on a docs-only change; its root cause is still unconfirmed.
 
 ## 2026-10-02 retained Demo identity gate — repair follow-up
 
