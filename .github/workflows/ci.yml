@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: ["1/4", "2/4", "3/4", "4/4"]
+        shard: ["1/8", "2/8", "3/8", "4/8", "5/8", "6/8", "7/8", "8/8"]
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -274,17 +274,45 @@ jobs:
 
 
   i18n-browser:
-    name: i18n browser matrix (${{ matrix.viewport }})
+    name: i18n browser matrix (${{ matrix.viewport }}, ${{ matrix.language }})
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
+        viewport: [desktop, mobile]
+        language: [en, ms, zh, ja, vi]
         include:
           - viewport: desktop
+            language: en
             port: 4312
-          - viewport: mobile
+          - viewport: desktop
+            language: ms
             port: 4313
+          - viewport: desktop
+            language: zh
+            port: 4314
+          - viewport: desktop
+            language: ja
+            port: 4315
+          - viewport: desktop
+            language: vi
+            port: 4316
+          - viewport: mobile
+            language: en
+            port: 4317
+          - viewport: mobile
+            language: ms
+            port: 4318
+          - viewport: mobile
+            language: zh
+            port: 4319
+          - viewport: mobile
+            language: ja
+            port: 4320
+          - viewport: mobile
+            language: vi
+            port: 4321
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -331,9 +359,9 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
 
-      - name: i18n browser matrix (en/ms/zh/ja/vi × desktop/mobile)
+      - name: i18n browser matrix (${{ matrix.language }} × ${{ matrix.viewport }})
         env:
-          I18N_LANGUAGES: en,ms,zh,ja,vi
+          I18N_LANGUAGES: ${{ matrix.language }}
           I18N_REQUIRE_PGLITE: 1
           I18N_BOOT_TIMEOUT_MS: 60000
           I18N_PAGE_BOOT_TIMEOUT_MS: 120000
@@ -344,16 +372,17 @@ jobs:
           run_i18n() {
             local viewport="$1"
             local port="$2"
+            local language="$3"
             I18N_VIEWPORTS="$viewport" \
               I18N_AUDIT_PORT="$port" \
-              I18N_REPORT_PATH="output/i18n-browser-report-${viewport}.json" \
-              npm run audit:i18n >"output/i18n-browser-${viewport}.log" 2>&1
+              I18N_REPORT_PATH="output/i18n-browser-report-${viewport}-${language}.json" \
+              npm run audit:i18n >"output/i18n-browser-${viewport}-${language}.log" 2>&1
           }
-          # Each viewport has its own runner and browser-local PGlite store.
-          run_i18n "${{ matrix.viewport }}" "${{ matrix.port }}" || viewport_status=$?
+          # Each viewport/language leg has its own runner and browser-local PGlite store.
+          run_i18n "${{ matrix.viewport }}" "${{ matrix.port }}" "${{ matrix.language }}" || viewport_status=$?
           viewport_status=${viewport_status:-0}
           if [[ "$viewport_status" -ne 0 ]]; then
-            cat "output/i18n-browser-${{ matrix.viewport }}.log"
+            cat "output/i18n-browser-${{ matrix.viewport }}-${{ matrix.language }}.log"
             exit "$viewport_status"
           fi
 
@@ -361,12 +390,12 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: i18n-browser-matrix-${{ matrix.viewport }}
+          name: i18n-browser-matrix-${{ matrix.viewport }}-${{ matrix.language }}
           path: output/i18n-browser-report-*.json
           if-no-files-found: ignore
 
   browser-audits:
-    name: Browser smoke, layout audits, and public-subpath contract
+    name: Browser smoke and public-subpath contract
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -418,8 +447,111 @@ jobs:
       - name: Browser smoke test (desktop + mobile, zero console/page errors)
         run: npm run smoke
 
+      - name: Production public-subpath browser contract
+        run: npm run test:e2e:production-subpath
+
+  screen-audit:
+    name: Screen audit (all routes)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            web/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install web dependencies
+        run: npm ci --prefix web
+
+      - name: Build the GitHub Pages demo bundle
+        id: demo-build
+        env:
+          VITE_DATA_MODE: demo
+        run: npm run build:demo
+
+      - name: Get installed Playwright version
+        id: playwright-version
+        run: echo "version=$(node -e "console.log(require('./package.json').devDependencies.playwright)")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright Chromium (+ OS deps)
+        id: chromium-install
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright OS deps only (browser cache hit)
+        id: chromium-deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
       - name: Screen audit (every SCREENS route, zero errors + no leftover prototype data on canonical screens)
         run: npm run audit:screens
+
+  layout-audits:
+    name: Transaction list and operational workspace layout audits
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            web/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install web dependencies
+        run: npm ci --prefix web
+
+      - name: Build the GitHub Pages demo bundle
+        id: demo-build
+        env:
+          VITE_DATA_MODE: demo
+        run: npm run build:demo
+
+      - name: Get installed Playwright version
+        id: playwright-version
+        run: echo "version=$(node -e "console.log(require('./package.json').devDependencies.playwright)")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright Chromium (+ OS deps)
+        id: chromium-install
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright OS deps only (browser cache hit)
+        id: chromium-deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       - name: Transaction list layout audit (declared SSOT routes, desktop + mobile)
         run: npm run audit:list-layouts
@@ -427,5 +559,3 @@ jobs:
       - name: Operational workspace layout audit (declared SSOT routes, desktop + mobile)
         run: npm run audit:workspaces
 
-      - name: Production public-subpath browser contract
-        run: npm run test:e2e:production-subpath
