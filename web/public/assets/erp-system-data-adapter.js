@@ -389,7 +389,6 @@
     if (!pending.length) throw new Error('Demo migration bundle has no pending migration for schema drift.');
     await execBootStatement(db, 'erp-system-migrations.sql', migrationSql.slice(pending[0].offset));
     await db.exec(
-      'drop index if exists "uq_role_master_name";' +
       'create unique index if not exists "uq_role_company_name" ' +
       'on "role" ("master_fn","company_fn","name");');
     var appliedPayrollTables = (await db.query(
