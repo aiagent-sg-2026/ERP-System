@@ -154,7 +154,7 @@ try{
   await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('fictional clipboard unavailable');}}}));
   await panel.getByRole('button',{name:'Copy diagnostic',exact:true}).click();
   assert.match(await panel.innerText(),/Could not copy/);
-  await panel.locator('summary').click();
+  await panel.locator('details:not(.demo-diagnostic-fold) > summary').click();
   assert.equal(await panel.locator('pre').isVisible(),true);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);
   for(const [language,label] of Object.entries({en:'Copy diagnostic',zh:'复制诊断',ms:'Salin diagnostik',ja:'診断をコピー',vi:'Sao chép chẩn đoán'})){
