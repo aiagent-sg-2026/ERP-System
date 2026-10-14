@@ -124,9 +124,12 @@ try {
   assert.ok(blocked.every(message => /not ready|unavailable/.test(message)), JSON.stringify(blocked));
   await slow.locator('#wizNext').click();
   await slow.locator('#wizMaster').fill('Retained typed organization');
+  const retainedLanguage = await slow.locator('#wizTopLang').inputValue();
   await ready(slow);
   assert.equal(await slow.locator('#wizMaster').inputValue(), 'Retained typed organization');
   assert.equal(await slow.locator('#wizardShowcase').isEnabled(), true);
+  assert.equal(await slow.locator('#wizNext').isEnabled(), true);
+  assert.equal(await slow.locator('#wizTopLang').inputValue(), retainedLanguage);
   await delayed.close();
   console.log('PASS delayed runtime, late recovery and retained form input');
 
@@ -138,6 +141,10 @@ try {
   await broken.locator('#setupWizardView').waitFor({ timeout: 90000 });
   for (let step = 0; step < 4; step++) await broken.locator('#wizNext').click();
   assert.equal(await broken.locator('#wizNext').isDisabled(), true);
+  assert.match(await broken.locator('#setupWizardView').innerText(), /Module catalogue is unavailable/);
+  assert.equal(await broken.locator('#wizModuleSeg input[data-module-key]').count(), 0);
+  assert.equal(await broken.evaluate(() => window.ErpSystemData?.databaseReady === true), false);
+  assert.equal(await broken.evaluate(() => typeof window.ErpSystemData?.db?.query === 'function'), false);
   const setupDenied = await broken.evaluate(async () => { try { await ErpSystemData.completeSetup({}); return false; } catch { return true; } });
   assert.equal(setupDenied, true);
   assert.equal(await broken.locator('#wizardShowcase').isDisabled(), true);
