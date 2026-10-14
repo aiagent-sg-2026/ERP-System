@@ -2674,9 +2674,12 @@ Current truth:
 | TASK-223 | Done | Resolve payment voucher recovery audit timing uncertainty; Promise-aware 10-second recovery budget and full 129-route audit pass |
 | TASK-251 | Done | Local Company, Employee, Leave and Receipts Demo E2E; localized module-blocked title repaired, with scanner/production limits recorded |
 | TASK-252 | Done | Governed Company profile view/edit for HR/Admin MVP verified locally in Demo/API tests and desktop/375px browser |
-| TASK-253 | Done | Staff directory combined filters and governed accountless employment end verified locally in Demo/API tests and desktop/375px browser |
-| TASK-254 | Done | Leave date-overlap guard and employee-to-HR approval lifecycle verified locally against Demo/PGlite and domain/API tests |
+| TASK-253 | In progress | Staff directory combined filters and governed accountless employment end verified locally in Demo/API tests and desktop/375px browser; exact-head release evidence pending |
+| TASK-254 | In progress | Leave date-overlap guard and employee-to-HR approval lifecycle verified locally against Demo/PGlite and domain/API tests; exact-head release evidence pending |
 | TASK-255 | Done | My/Company Receipts archive, mobile receipt cards, yearly category-keyword Pack/PDF/Print and scanner boundary verified locally |
+| TASK-256 | In progress | Company-owned BU/Position masters with explicit scoped HR access; PostgreSQL RLS rehearsal and exact-commit CI pending |
+| TASK-257 | In progress | Retained Demo unique-index drift repair without resetting browser data; delayed-recovery proof and exact-head evidence pending |
+| TASK-258 | Done | Atomic retained Demo upgrades, safe diagnostics, marker-less canonical storage adoption and optional sample top-up tolerance; main 7d5725b CI/Pages verified, owner workspace click-through not observed |
 | TASK-259 | Todo | Root-cause the intermittent Staff phone persistence failure (read back NULL once in CI); reproducible harness and evidence-backed fix, no sleeps/retries |
 
 Exit criteria: TASK-195–202 and TASK-204–205 pass their source, PostgreSQL, browser and operational

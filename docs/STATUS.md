@@ -50,6 +50,20 @@ overflow. This is a local candidate, not a production deployment or
 PostgreSQL migration/UAT result. See [evidence](evidence/TASK-252-company-profile.md)
 and the [focused MVP tracker](PROGRESS.md).
 
+## 2026-10-14 retained Demo marker-less storage and startup follow-up
+
+The owner's retained browser database failed startup with `demo_schema_lineage_unknown`
+(exact canonical v79 structure, no migration marker or identity; builds before the marker
+table left such a prefix). It is now adopted only on one exact structural match inside the
+atomic upgrade, proven by unit tests and a Chromium browser regression that fails without
+the fix. The next owner failure, `P0001` in the warehouse pick top-up, led to tolerating
+failing optional sample top-ups on retained databases while keeping fresh databases
+strict. The failure panel is collapsed to a thin strip, the sample-demo entry is the primary
+login action, transaction detail pages use the shared page gutter (PR 24), and CI runs in
+parallel (about 17-19 minutes instead of about 100). main 7d5725b CI and Pages deploy
+passed. Owner click-through into the workspace and production PostgreSQL/UAT are not
+verified. The intermittent Staff phone read-back failure is TASK-259.
+
 ## 2026-10-02 retained Demo identity gate — repair follow-up
 
 TASK-258 original repair/diagnostics merged as PR15 at main d29c29b; full main
