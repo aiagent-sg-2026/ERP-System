@@ -218,6 +218,45 @@ describe('identity-aware bounded retained Demo compatibility',()=>{
       expect(await identityTable(db)).toBe(1);
     }finally{await db.close();}
   });
+  it('adopts a marker-less exact v79 prefix, upgrades it with the ordered runner and preserves data',async()=>{
+    const tag=DEMO_SCHEMA_LINEAGE.identities.find(identity=>identity.version===80)!.tag;
+    const prefix=schema.slice(0,schema.indexOf('-- '+tag));
+    for(const emptyMarker of [false,true]){
+      const db=new PGlite();
+      try{
+        await db.exec(prefix);
+        await db.exec("insert into master(master_fn,login_code,name) values('M-FIXTURE','FIXTURE','Fictional retained Group')");
+        if(emptyMarker)await db.exec('create table "_erp_demo_migration"(version integer primary key,applied_at timestamptz not null default now())');
+        const before=(await db.query('select * from master order by 1')).rows;
+        expect(await ensureDemoMigrationIdentity(db)).toEqual({repaired:true,version:79});
+        expect((await db.query('select max(version)::int as v from "_erp_demo_migration"')).rows[0]).toEqual({v:79});
+        expect(await identityTable(db)).toBe(0);
+        await upgradeDemoSchema(db,orderedRunner());
+        expect(await ensureDemoMigrationIdentity(db,true)).toEqual({repaired:false,version:latestIdentity.version});
+        expect((await db.query('select * from master order by 1')).rows).toEqual(before);
+        expect(await identityTable(db)).toBe(1);
+      }finally{await db.close();}
+    }
+  });
+  it('still rejects a marker-less schema with drift or recorded identities',async()=>{
+    const tag=DEMO_SCHEMA_LINEAGE.identities.find(identity=>identity.version===80)!.tag;
+    const prefix=schema.slice(0,schema.indexOf('-- '+tag));
+    const drift=new PGlite();
+    try{
+      await drift.exec(prefix);
+      await drift.exec('create table retained_owned_drift(id integer)');
+      await drift.exec('alter table master add column fictional_drift text');
+      await expect(ensureDemoMigrationIdentity(drift)).rejects.toMatchObject({code:'demo_schema_lineage_unknown'});
+    }finally{await drift.close();}
+    const tracked=new PGlite();
+    try{
+      await tracked.exec(prefix);
+      await tracked.exec('create table "_erp_demo_schema_identity"(version integer primary key,tag text not null,sql_hash text not null,applied_at timestamptz not null default now())');
+      await tracked.query('insert into "_erp_demo_schema_identity"(version,tag,sql_hash) values(79,$1,$2)',['unexpected-tag','unexpected-hash']);
+      await expect(ensureDemoMigrationIdentity(tracked)).rejects.toMatchObject({code:'demo_schema_lineage_mismatch'});
+      expect((await tracked.query<{n:number}>("select count(*)::int as n from pg_tables where schemaname='public' and tablename='_erp_demo_migration'")).rows[0].n).toBe(0);
+    }finally{await tracked.close();}
+  });
   it('adopts the healthy untracked latest schema once without changing any tenant records',async()=>{
     const db=await fixture(latestIdentity.version,true);
     try{

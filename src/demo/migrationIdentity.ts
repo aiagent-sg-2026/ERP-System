@@ -181,6 +181,19 @@ async function ensureDemoMigrationIdentityWithin(tx: Transaction,finalValidation
       await recordIdentity(tx,hrTarget);
       return {repaired:true,version:hrTarget.version};
     }
+    // Builds that predate the marker table (added in 285041f) left a complete canonical
+    // prefix with no marker rows. Adopt it only on one exact structural identity match
+    // with no recorded identity; the ordered runner then continues from that version.
+    const unmarked=current===0&&!recorded.length;
+    const matches=unmarked?DEMO_SCHEMA_LINEAGE.identities.filter(identity=>identity.structuralHash===structuralHash):[];
+    if(matches.length===1&&matches[0].version>0){
+      // marker() is 0 for an absent table, an empty table or a literal version 0 row; only the first two are adoptable.
+      await tx.exec('create table if not exists "_erp_demo_migration" ("version" integer primary key,"applied_at" timestamptz not null default now())');
+      if(Number((await tx.query<{n:number}>('select count(*)::int as n from "_erp_demo_migration"')).rows[0].n)===0){
+        await tx.query('insert into "_erp_demo_migration"(version) values($1)',[matches[0].version]);
+        return {repaired:true,version:matches[0].version};
+      }
+    }
     if(!expected||structuralHash!==expected.structuralHash)throw await unknown();
     // A recognized older prefix follows the existing ordered compatibility runner.
     // Record nothing until its complete current structural contract is verified.
