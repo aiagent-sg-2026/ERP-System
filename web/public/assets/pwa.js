@@ -35,6 +35,7 @@
     el.id = 'pwaToast';
     el.className = 'pwa-toast';
     el.setAttribute('role', 'status');
+    el.setAttribute('aria-label', 'ERP System notification');
     el.setAttribute('aria-live', 'polite');
     document.body.appendChild(el);
     return el;
