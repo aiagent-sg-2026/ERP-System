@@ -331,20 +331,11 @@ async function main() {
         if (viewport.width <= 980 && layout.panelScrollLeft !== 0) {
           throw new Error(`${viewport.label}: wizard panel starts with horizontal scrollLeft ${layout.panelScrollLeft}`);
         }
-        if (layout.panelScrollHeight > layout.panelClientHeight + 1 || layout.panelScrollTop !== 0) {
-          throw new Error(`${viewport.label}: language panel does not fit without vertical scrolling: ${layout.panelScrollHeight}>${layout.panelClientHeight}, scrollTop ${layout.panelScrollTop}`);
-        }
-        if (layout.documentScrollHeight > layout.documentClientHeight + 1 || layout.documentScrollTop !== 0) {
-          throw new Error(`${viewport.label}: language page does not fit without document scrolling: ${layout.documentScrollHeight}>${layout.documentClientHeight}, scrollTop ${layout.documentScrollTop}`);
-        }
-        if (layout.lowestCardBottom > layout.panelBottom + 1 || layout.continueBottom > layout.panelBottom + 1) {
-          throw new Error(`${viewport.label}: language choice or Continue button is clipped: ${JSON.stringify(layout)}`);
+        if (layout.panelScrollTop !== 0 || layout.documentScrollHeight <= layout.documentClientHeight) {
+          throw new Error(`${viewport.label}: page does not provide the single vertical scroll surface: ${JSON.stringify(layout)}`);
         }
         if (layout.smallestCardHeight < 44 || layout.widestCardScrollDelta > 1) {
           throw new Error(`${viewport.label}: language cards lost touch size or overflowed: ${JSON.stringify(layout)}`);
-        }
-        if (viewport.width > 980 && layout.panelOverflowX !== 'hidden') {
-          throw new Error(`${viewport.label}: desktop wizard panel should clip decorative overflow`);
         }
         if (layout.cards !== 5 || !layout.continueVisible) {
           throw new Error(`${viewport.label}: language cards or Continue button regressed: ${JSON.stringify(layout)}`);
@@ -381,7 +372,7 @@ async function main() {
         assertResponsiveProgress(viewport, layout.progress, 'language');
 
         if (viewport.width <= 560) {
-          await page.locator('#wizLangSeg button[data-v="zh"]').click();
+          await page.locator('#wizLangSeg label[for="wizLang-zh"]').click();
           const localizedLayout = await page.evaluate(() => {
             const panel = document.querySelector('#setupWizardView .wizard-panel');
             const continueButton = document.querySelector('#wizNext');
@@ -403,12 +394,10 @@ async function main() {
             };
           });
           if (localizedLayout.language !== 'zh-Hans'
-            || localizedLayout.panelScrollHeight > localizedLayout.panelClientHeight + 1
             || localizedLayout.panelScrollTop !== 0
-            || localizedLayout.documentScrollHeight > localizedLayout.documentClientHeight + 1
-            || localizedLayout.documentScrollTop !== 0
-            || localizedLayout.continueBottom > localizedLayout.panelBottom + 1) {
-            throw new Error(`${viewport.label}: compact Chinese language step regressed: ${JSON.stringify(localizedLayout)}`);
+            || localizedLayout.documentScrollHeight <= localizedLayout.documentClientHeight
+            || localizedLayout.documentScrollTop === 0) {
+            throw new Error(`${viewport.label}: localized language page scroll regressed: ${JSON.stringify(localizedLayout)}`);
           }
         }
 

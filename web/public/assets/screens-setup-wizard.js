@@ -117,8 +117,8 @@ function renderSetupWizard(){
   var COPY = {
     en:{
       brand:'First-run setup', back:'Back', cont:'Continue', finish:'Finish setup',
-      s0:'Language', s1:'Organization', s2:'Company', s3:'Admin user', s4:'AI (optional)', s5:'Finish',
-      s0h:'Choose your language', s0p:'You can change this later from the top bar.',
+      s0:'Choose your language', s1:'Organization', s2:'Company', s3:'Admin user', s4:'AI (optional)', s5:'Finish', stepCaption:'Step {step} of 7 - {title}',
+      s0h:'1. Language & Appearance', s0p:'Choose your preferred language and visual style. You can change these settings anytime in System Settings after setup.',
       s0note:'You can change your language anytime in System Settings after setup.',
       s1h:'Name your organization', s1p:'The top-level group or holding entity. Every company you add belongs to it.',
       s1lbl:'Organization name', s1ph:'e.g. Acme Group', s1code:'Organization login code', s1codeph:'e.g. ACME',
@@ -156,8 +156,8 @@ function renderSetupWizard(){
     },
     ms:{
       brand:'Persediaan pertama', back:'Kembali', cont:'Teruskan', finish:'Selesai persediaan',
-      s0:'Bahasa', s1:'Organisasi', s2:'Syarikat', s3:'Pengguna admin', s4:'AI (pilihan)', s5:'Selesai',
-      s0h:'Pilih bahasa anda', s0p:'Anda boleh menukarnya kemudian dari bar atas.',
+      s0:'Pilih bahasa anda', s1:'Organisasi', s2:'Syarikat', s3:'Pengguna admin', s4:'AI (pilihan)', s5:'Selesai', stepCaption:'Langkah {step} daripada 7 - {title}',
+      s0h:'1. Bahasa & Penampilan', s0p:'Pilih bahasa dan gaya visual pilihan anda. Anda boleh menukar tetapan ini pada bila-bila masa dalam Tetapan Sistem selepas persediaan.',
       s0note:'Anda boleh menukar bahasa pada bila-bila masa dalam Tetapan Sistem selepas persediaan.',
       s1h:'Namakan organisasi anda', s1p:'Kumpulan induk peringkat atas. Setiap syarikat yang anda tambah tergolong dalamnya.',
       s1lbl:'Nama organisasi', s1ph:'cth. Acme Group', s1code:'Kod log masuk organisasi', s1codeph:'cth. ACME',
@@ -192,8 +192,8 @@ function renderSetupWizard(){
     },
     zh:{
       brand:'首次设置', back:'上一步', cont:'继续', finish:'完成设置',
-      s0:'语言', s1:'组织', s2:'公司', s3:'管理员账户', s4:'AI(可选)', s5:'完成',
-      s0h:'选择您的语言', s0p:'您稍后可以从顶部栏更改。',
+      s0:'选择您的语言', s1:'组织', s2:'公司', s3:'管理员账户', s4:'AI(可选)', s5:'完成', stepCaption:'第 {step} 步，共 7 步 - {title}',
+      s0h:'1. 语言与外观', s0p:'选择您偏好的语言和视觉风格。设置完成后，您可以随时在系统设置中更改这些选项。',
       s0note:'完成设置后，您可以随时在系统设置中更改语言。',
       s1h:'为您的组织命名', s1p:'顶层集团/控股实体。您添加的每家公司都属于它。',
       s1lbl:'组织名称', s1ph:'例如 Acme Group', s1code:'组织登录代码', s1codeph:'例如 ACME',
@@ -232,14 +232,15 @@ function renderSetupWizard(){
       "back": "戻る",
       "cont": "続く",
       "finish": "セットアップを完了する",
-      "s0": "言語",
+      "s0": "言語を選択してください",
       "s1": "組織",
       "s2": "会社",
       "s3": "管理者ユーザー",
       "s4": "AI（オプション）",
       "s5": "仕上げる",
-      "s0h": "言語を選択してください",
-      "s0p": "これは後で上部のバーから変更できます。",
+      "stepCaption": "ステップ {step} / 7 - {title}",
+      "s0h": "1. 言語と外観",
+      "s0p": "お好みの言語と表示スタイルを選択してください。セットアップ後はシステム設定からいつでも変更できます。",
       "s0note": "セットアップ後は、システム設定からいつでも言語を変更できます。",
       "s1h": "組織に名前を付けます",
       "s1p": "最上位のグループまたは保持エンティティ。追加したすべての会社はそれに属します。",
@@ -318,14 +319,15 @@ function renderSetupWizard(){
       "back": "Mặt sau",
       "cont": "Tiếp tục",
       "finish": "Hoàn tất thiết lập",
-      "s0": "Ngôn ngữ",
+      "s0": "Chọn ngôn ngữ của bạn",
       "s1": "Tổ chức",
       "s2": "Công ty",
       "s3": "Người dùng quản trị",
       "s4": "AI (tùy chọn)",
       "s5": "Hoàn thành",
-      "s0h": "Chọn ngôn ngữ của bạn",
-      "s0p": "Bạn có thể thay đổi điều này sau từ thanh trên cùng.",
+      "stepCaption": "Bước {step} trên 7 - {title}",
+      "s0h": "1. Ngôn ngữ & Giao diện",
+      "s0p": "Chọn ngôn ngữ và kiểu hiển thị bạn muốn. Bạn có thể thay đổi các cài đặt này bất cứ lúc nào trong Cài đặt hệ thống sau khi thiết lập.",
       "s0note": "Sau khi thiết lập, bạn có thể thay đổi ngôn ngữ bất cứ lúc nào trong Cài đặt hệ thống.",
       "s1h": "Đặt tên cho tổ chức của bạn",
       "s1p": "Nhóm cấp cao nhất hoặc tổ chức nắm giữ. Mọi công ty bạn thêm đều thuộc về nó.",
@@ -675,17 +677,17 @@ function renderSetupWizard(){
     var badges = { en:ic('globe'), ms:'BM', zh:'简', ja:'日', vi:'VI' };
     var languageOrder = ['en','zh','ms','ja','vi'];
     var languageLabels = { en:'English', zh:'Simplified Chinese', ms:'Bahasa Melayu', ja:'Japanese', vi:'Vietnamese' };
-    return '<div class="wiz-language-grid" id="wizLangSeg" role="radiogroup" aria-label="'+esc(s('s0'))+'">'+
-      languageOrder.map(function(code, i){
+    return '<section class="wiz-language-section" aria-labelledby="wizLanguageTitle"><div class="wiz-section-heading"><span class="wiz-section-icon" aria-hidden="true">'+ic('globe')+'</span><div><h3 id="wizLanguageTitle">'+esc(s('s0'))+'</h3><p>'+esc(s('s0p'))+'</p></div></div>'+
+      '<div class="wiz-language-grid" id="wizLangSeg" role="radiogroup" aria-label="'+esc(s('s0'))+'">'+
+      languageOrder.map(function(code){
         var l = I18N_LANGS.filter(function(item){ return item.code===code; })[0] || {code:code,native:code,label:code};
-        var selected = l.code===S.lang;
-        return '<button type="button" role="radio" aria-checked="'+selected+'" data-v="'+esc(l.code)+'" lang="'+(l.code==='zh'?'zh-Hans':esc(l.code))+'" class="wiz-language-card '+(selected?'is-selected ':'')+(i===I18N_LANGS.length-1?'is-wide':'')+'">'+
+        var selected = l.code===S.lang, inputId='wizLang-'+code;
+        return '<div class="wiz-language-choice"><input class="wiz-radio" id="'+inputId+'" type="radio" name="wizLang" value="'+esc(l.code)+'" '+(selected?'checked':'')+'><label for="'+inputId+'" lang="'+(l.code==='zh'?'zh-Hans':esc(l.code))+'" class="wiz-language-card '+(selected?'is-selected':'')+'">'+
           '<span class="wiz-language-badge wiz-language-badge-'+esc(l.code)+'">'+badges[l.code]+'</span>'+
           '<span class="wiz-language-copy"><b>'+esc(l.native)+'</b><small>'+esc(languageLabels[l.code]||l.label)+'</small></span>'+
-          '<span class="wiz-language-check" aria-hidden="true">'+(selected?ic('check'):'')+'</span>'+
-        '</button>';
+          '<span class="wiz-language-check" aria-hidden="true">'+(selected?ic('check'):'')+'</span></label></div>';
       }).join('')+'</div>'+
-      '<div class="wiz-language-note" role="note">'+ic('info')+'<span>'+esc(s('s0note'))+'</span></div>';
+      '<div class="wiz-language-note" role="note">'+ic('info')+'<span>'+esc(s('s0note'))+'</span></div></section>';
   }
 
   function backgroundPicker(){
@@ -693,40 +695,31 @@ function renderSetupWizard(){
       {id:'aurora',label:'Aurora'}, {id:'mist',label:'Mist'},
       {id:'paper',label:'Paper'}, {id:'night-sky',label:'Night sky'},
     ];
-    var current = document.documentElement.getAttribute('data-background') || 'aurora';
     return '<section class="wiz-background-picker" aria-labelledby="wizBackgroundTitle">'+
-      '<div class="wiz-background-copy"><h3 id="wizBackgroundTitle">'+esc(s('title'))+'</h3><p>'+esc(s('body'))+'</p></div>'+
-      '<div class="wiz-background-options" role="radiogroup" aria-labelledby="wizBackgroundTitle">'+
-      options.map(function(option){
-        var key=option.id==='night-sky'?'nightSky':option.id;
-        var selected=option.id===current;
-        var label=typeof t==='function'&&option.labelKey?t(option.labelKey):option.label;
-        return '<button type="button" class="wiz-background-option '+(selected?'is-selected':'')+'" data-background-value="'+esc(option.id)+'" role="radio" aria-checked="'+selected+'">'+
-          '<span class="wiz-background-swatch wiz-background-swatch-'+esc(option.id)+'" aria-hidden="true"></span>'+
-          '<span class="wiz-background-option-copy"><b>'+esc(label)+'</b><small>'+esc(s(key))+'</small></span>'+
-          '<span class="wiz-background-check" aria-hidden="true">'+(selected?ic('check'):'')+'</span></button>';
+      '<div class="wiz-section-heading"><span class="wiz-section-icon" aria-hidden="true">'+ic('layers')+'</span><div><h3 id="wizBackgroundTitle">'+esc(s('title'))+'</h3><p>'+esc(s('body'))+'</p></div></div>'+
+      '<div class="wiz-background-options" role="radiogroup" aria-labelledby="wizBackgroundTitle">'+options.map(function(option){
+        var key=option.id==='night-sky'?'nightSky':option.id, selected=option.id===current;
+        var label=typeof t==='function'&&option.labelKey?t(option.labelKey):option.label, inputId='wizBackground-'+option.id;
+        return '<div class="wiz-choice"><input class="wiz-radio" id="'+esc(inputId)+'" type="radio" name="wizBackground" value="'+esc(option.id)+'" '+(selected?'checked':'')+'><label for="'+esc(inputId)+'" role="radio" aria-checked="'+selected+'" data-background-value="'+esc(option.id)+'" class="wiz-background-option '+(selected?'is-selected':'')+'">'+
+          '<span class="wiz-background-swatch wiz-background-swatch-'+esc(option.id)+'" aria-hidden="true"></span><span class="wiz-background-option-copy"><b>'+esc(label)+'</b></span>'+
+          '<span class="wiz-background-check" aria-hidden="true">'+(selected?ic('check'):'')+'</span></label></div>';
       }).join('')+'</div></section>';
   }
 
   function colorPalettePicker(){
     var options = window.ERP_COLOR_PALETTE_OPTIONS || [
-      {id:'aria',label:'Aria Blue',swatches:['#0071E3','#5E5CE6','#0A7D8C']},
-      {id:'royal',label:'Royal Purple',swatches:['#6C5CE7','#8B5CF6','#3B82F6']},
-      {id:'ruby',label:'Ruby Red',swatches:['#C6284F','#EF4444','#F97316']},
-      {id:'sunflower',label:'Sunflower Amber',swatches:['#B26A00','#F59E0B','#FFB340']},
-      {id:'forest',label:'Forest Green',swatches:['#18864B','#0A7D8C','#34C759']},
-      {id:'ocean',label:'Ocean Teal',swatches:['#0A7D8C','#0071E3','#22D3EE']},
+      {id:'aria',label:'Aria Blue',swatches:['#0071E3','#5E5CE6','#0A7D8C']},{id:'royal',label:'Royal Purple',swatches:['#6C5CE7','#8B5CF6','#3B82F6']},
+      {id:'ruby',label:'Ruby Red',swatches:['#C6284F','#EF4444','#F97316']},{id:'sunflower',label:'Sunflower Amber',swatches:['#B26A00','#F59E0B','#FFB340']},
+      {id:'forest',label:'Forest Green',swatches:['#18864B','#0A7D8C','#34C759']},{id:'ocean',label:'Ocean Teal',swatches:['#0A7D8C','#0071E3','#22D3EE']},
     ];
     var current = document.documentElement.getAttribute('data-palette') || 'aria';
-    if(current==='custom' || !options.some(function(option){ return option.id===current; })) current='aria';
     return '<section class="wiz-color-picker" aria-labelledby="wizColorPaletteTitle">'+
-      '<div class="wiz-color-copy"><h3 id="wizColorPaletteTitle">'+esc(s('paletteTitle'))+'</h3><p>'+esc(s('paletteBody'))+'</p></div>'+
-      '<div class="wiz-color-options" role="radiogroup" aria-labelledby="wizColorPaletteTitle">'+
-      options.map(function(option){
-        var selected=option.id===current;
-        return '<button type="button" class="wiz-color-option '+(selected?'is-selected':'')+'" data-color-palette-value="'+esc(option.id)+'" role="radio" aria-checked="'+selected+'" aria-label="'+esc(s(option.id))+'">'+
-          '<span class="wiz-color-swatches" aria-hidden="true">'+(option.swatches||[]).map(function(colour){ return '<i style="background:'+esc(colour)+'"></i>'; }).join('')+'</span>'+
-          '<b>'+esc(s(option.id))+'</b><span class="wiz-color-check" aria-hidden="true">'+(selected?ic('check'):'')+'</span></button>';
+      '<div class="wiz-section-heading"><span class="wiz-section-icon" aria-hidden="true">'+ic('sliders')+'</span><div><h3 id="wizColorPaletteTitle">'+esc(s('paletteTitle'))+'</h3><p>'+esc(s('paletteBody'))+'</p></div></div>'+
+      '<div class="wiz-color-options" role="radiogroup" aria-labelledby="wizColorPaletteTitle">'+options.map(function(option){
+        var selected=option.id===current, inputId='wizPalette-'+option.id;
+        return '<div class="wiz-choice"><input class="wiz-radio" id="'+esc(inputId)+'" type="radio" name="wizPalette" value="'+esc(option.id)+'" '+(selected?'checked':'')+'><label for="'+esc(inputId)+'" role="radio" aria-checked="'+selected+'" data-color-palette-value="'+esc(option.id)+'" class="wiz-color-option '+(selected?'is-selected':'')+'">'+
+          '<span class="wiz-color-swatches" aria-hidden="true">'+(option.swatches||[]).slice(0,2).map(function(colour){ return '<i style="background:'+esc(colour)+'"></i>'; }).join('')+'</span>'+
+          '<span class="wiz-palette-preview" style="--palette-preview:'+esc((option.swatches||[])[0]||'#0071E3')+'" aria-hidden="true"><i></i><i></i><i></i></span><b>'+esc(s(option.id))+'</b><span class="wiz-color-check" aria-hidden="true">'+(selected?ic('check'):'')+'</span></label></div>';
       }).join('')+'</div></section>';
   }
 
@@ -918,19 +911,15 @@ function renderSetupWizard(){
     host.innerHTML = '<section class="auth-panel wizard-panel'+(S.step===0?' wizard-language-panel':'')+'">'+
       '<div class="wizard-brandbar"><div class="auth-brand"><span class="mark brand-logo-mark">'+window.erpBrandLogo()+'</span><span><b>Aria ERP</b><small>'+esc(s('brand'))+'</small></span></div>'+languagePicker()+'</div>'+
       stepper()+
+      '<div class="wizard-step-caption">'+esc(s('stepCaption').replace('{step}',String(S.step+1)).replace('{title}',S.step===0?s('s0h').replace(/^1[.．]\s*/, ''):s(STEP_KEYS[S.step])))+'</div>'+
       '<div id="wizStepBody" class="wizard-step-body">'+stepBody()+'</div>'+
       footer()+
       '</section>';
     wire();
     if(window.ErpDemoDiagnostics)window.ErpDemoDiagnostics.render();
-    // Keep the fixed wizard shell anchored while the inner step body scrolls.
-    // Replacing the focused navigation button can otherwise preserve the old
-    // outer scroll offset and hide the brand bar on compact viewports.
+    // Keep rerendered steps anchored at the top of the single page scroll surface.
+    window.scrollTo(0,0);
     host.scrollTop=0;
-    if(options&&typeof options.stepScrollTop==='number'){
-      var scrollContainer=document.getElementById('wizStepBody');
-      if(scrollContainer) scrollContainer.scrollTop=Math.max(0,Math.min(options.stepScrollTop,scrollContainer.scrollHeight-scrollContainer.clientHeight));
-    }
   }
 
   /* The demo adapter may replace a temporary offline fallback after this
@@ -986,36 +975,30 @@ function renderSetupWizard(){
       });
     });
     var langSeg=document.getElementById('wizLangSeg');
-    if(langSeg) langSeg.querySelectorAll('button').forEach(function(b){
-      b.addEventListener('click',function(){ S.lang=b.dataset.v; render(); });
+    if(langSeg) langSeg.querySelectorAll('input[name="wizLang"]').forEach(function(input){
+      input.addEventListener('change',function(){ S.lang=input.value; render(); });
     });
     var topLang=document.getElementById('wizTopLang');
     if(topLang) topLang.addEventListener('change',function(){ S.lang=topLang.value; render(); });
-    var backgroundOptions=host.querySelectorAll('[data-background-value]');
-    backgroundOptions.forEach(function(button){
-      button.addEventListener('click',function(){
-        var value=button.dataset.backgroundValue;
-        if(typeof applyBackground==='function') applyBackground(value);
-        backgroundOptions.forEach(function(item){
-          var selected=item===button;
-          item.classList.toggle('is-selected',selected);
-          item.setAttribute('aria-checked',String(selected));
-          var check=item.querySelector('.wiz-background-check');
-          if(check) check.innerHTML=selected?ic('check'):'';
+    host.querySelectorAll('input[name="wizBackground"]').forEach(function(input){
+      input.addEventListener('change',function(){
+        if(typeof applyBackground==='function') applyBackground(input.value);
+        input.closest('[role="radiogroup"]').querySelectorAll('.wiz-background-option').forEach(function(label){
+          var selected=label.htmlFor===input.id;
+          label.setAttribute('aria-checked',String(selected));
+          label.classList.toggle('is-selected',selected);
+          var check=label.querySelector('.wiz-background-check'); if(check) check.innerHTML=selected?ic('check'):'';
         });
       });
     });
-    var colorPaletteOptions=host.querySelectorAll('[data-color-palette-value]');
-    colorPaletteOptions.forEach(function(button){
-      button.addEventListener('click',function(){
-        var value=button.dataset.colorPaletteValue;
-        if(typeof applyPalette==='function') applyPalette(value);
-        colorPaletteOptions.forEach(function(item){
-          var selected=item===button;
-          item.classList.toggle('is-selected',selected);
-          item.setAttribute('aria-checked',String(selected));
-          var check=item.querySelector('.wiz-color-check');
-          if(check) check.innerHTML=selected?ic('check'):'';
+    host.querySelectorAll('input[name="wizPalette"]').forEach(function(input){
+      input.addEventListener('change',function(){
+        if(typeof applyPalette==='function') applyPalette(input.value);
+        input.closest('[role="radiogroup"]').querySelectorAll('.wiz-color-option').forEach(function(label){
+          var selected=label.htmlFor===input.id;
+          label.setAttribute('aria-checked',String(selected));
+          label.classList.toggle('is-selected',selected);
+          var check=label.querySelector('.wiz-color-check'); if(check) check.innerHTML=selected?ic('check'):'';
         });
       });
     });
