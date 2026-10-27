@@ -1,5 +1,14 @@
 # ERP module verification coverage
 
+Cross-mode sales posting E2E — 2026-10-20: `npm run test:e2e:sales-order-posting`
+passed after logging in to the isolated Compose API and using the Demo PGlite adapter.
+The authenticated API created/approved/confirmed an order after posting opening-stock
+fixtures; both modes read back stock 7.0000, invoice net/tax/total 37.50/3.38/40.88,
+and three GL legs balancing at 40.88. The disposable PostgreSQL seed lacks a warehouse
+and open accounting period; those prerequisites were inserted as test fixtures, while
+the tested stock adjustment and sales mutations used the API. This is local parity
+evidence, not hosted production/UAT proof. See `tests/e2e/sales-order-posting.spec.mjs`.
+
 Post-pull full regression — 2026-09-12: `npm test -- --reporter=dot` passed 211 test
 files and 992 tests; four PostgreSQL-dependent files/tests skipped without
 `POSTGRES_URL`. Exit 0 after 1957 seconds. This is local source evidence only; target
